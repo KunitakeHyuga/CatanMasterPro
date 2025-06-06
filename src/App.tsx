@@ -12,7 +12,7 @@ import { EditPlayer } from './pages/EditPlayer';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/CatanMasterPro">
       <Routes>
         <Route path="/" element={<Dashboard />} />
         
