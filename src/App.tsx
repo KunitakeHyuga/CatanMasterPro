@@ -26,7 +26,7 @@ function App() {
         <Route path="/players/new" element={<NewPlayer />} />
         <Route path="/players/edit/:id" element={<EditPlayer />} />
         
-        <Route path="*" element={<Navigate to="/\" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
