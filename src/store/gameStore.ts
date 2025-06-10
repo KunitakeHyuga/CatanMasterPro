@@ -27,10 +27,44 @@ interface GameState {
 
 export const useGameStore = create<GameState>()(
   persist(
-    (set, get) => ({
-      players: [],
-      games: [],
-      savedBoards: [],
+    (set, get) => {
+      const recalcPlayerStats = (games: GameSession[]) => {
+        const { players } = get();
+        const updatedPlayers = players.map(player => {
+          const playerGames = games.filter(g =>
+            g.players.some(p => p.playerId === player.id)
+          );
+          const gamesPlayed = playerGames.length;
+          const wins = playerGames.filter(g => g.winner === player.id).length;
+          const totalScore = playerGames.reduce(
+            (sum, g) =>
+              sum + (g.players.find(p => p.playerId === player.id)?.score || 0),
+            0
+          );
+          const highestScore = playerGames.reduce((max, g) => {
+            const score = g.players.find(p => p.playerId === player.id)?.score || 0;
+            return Math.max(max, score);
+          }, 0);
+          const avgScore = gamesPlayed > 0 ? totalScore / gamesPlayed : 0;
+
+          return {
+            ...player,
+            stats: {
+              ...player.stats,
+              gamesPlayed,
+              wins,
+              avgScore,
+              highestScore,
+            },
+          };
+        });
+        set({ players: updatedPlayers });
+      };
+
+      return {
+        players: [],
+        games: [],
+        savedBoards: [],
 
       addPlayer: (name, color) => {
         const newPlayer: Player = {
@@ -97,44 +131,12 @@ export const useGameStore = create<GameState>()(
           ...game,
           id: uuidv4(),
         };
-        
+
         set((state) => ({
           games: [...state.games, newGame],
         }));
 
-        // Update player stats
-        const { players } = get();
-        game.players.forEach((gamePlayer) => {
-          const player = players.find((p) => p.id === gamePlayer.playerId);
-          if (player) {
-            const isWinner = gamePlayer.playerId === game.winner;
-            const playerGames = [...get().games, newGame].filter((g) =>
-              g.players.some((p) => p.playerId === player.id)
-            );
-            
-            const gamesPlayed = playerGames.length;
-            const wins = playerGames.filter((g) => g.winner === player.id).length;
-            const totalScore = playerGames.reduce(
-              (sum, g) => sum + g.players.find((p) => p.playerId === player.id)?.score || 0,
-              0
-            );
-            const avgScore = gamesPlayed > 0 ? totalScore / gamesPlayed : 0;
-            const highestScore = Math.max(
-              player.stats.highestScore,
-              gamePlayer.score
-            );
-
-            get().updatePlayer(player.id, {
-              stats: {
-                gamesPlayed,
-                wins,
-                avgScore,
-                highestScore,
-                favoriteResource: player.stats.favoriteResource,
-              },
-            });
-          }
-        });
+        recalcPlayerStats([...get().games, newGame]);
 
         return newGame.id;
       },
@@ -145,12 +147,14 @@ export const useGameStore = create<GameState>()(
             game.id === id ? { ...game, ...updates } : game
           ),
         }));
+        recalcPlayerStats(get().games);
       },
 
       removeGame: (id) => {
         set((state) => ({
           games: state.games.filter((game) => game.id !== id),
         }));
+        recalcPlayerStats(get().games);
       },
 
       getPlayerById: (id) => {
