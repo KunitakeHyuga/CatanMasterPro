@@ -4,11 +4,25 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card
 import { Plus, Minus, UserPlus, X, Save } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { GameSession, PlayerColor, ResourceType, HexTile, GamePlayer } from '../../models/types';
+import { HexBoard } from './HexBoard';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
 
 const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 'brown'];
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert'];
+const numberCycle: (number | undefined)[] = [
+  undefined,
+  2,
+  3,
+  4,
+  5,
+  6,
+  8,
+  9,
+  10,
+  11,
+  12
+];
 
 // Simplified board generation for the MVP
 const generateDefaultBoard = (): HexTile[] => {
@@ -71,6 +85,47 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     buildings: [],
     roads: []
   });
+
+  const cycleResource = (type: ResourceType): ResourceType => {
+    const idx = resourceTypes.indexOf(type);
+    const next = (idx + 1) % resourceTypes.length;
+    return resourceTypes[next];
+  };
+
+  const cycleNumber = (num?: number): number | undefined => {
+    const idx = numberCycle.indexOf(num);
+    const next = (idx + 1) % numberCycle.length;
+    return numberCycle[next];
+  };
+
+  const handleHexClick = (hexId: string) => {
+    setBoardSetup(prev => ({
+      ...prev,
+      hexTiles: prev.hexTiles.map(hex => {
+        if (hex.id !== hexId) return hex;
+        const newType = cycleResource(hex.type);
+        let newNumber = hex.number;
+        if (newType === 'desert') {
+          newNumber = undefined;
+        } else if (hex.type === 'desert') {
+          newNumber = 2;
+        }
+        return { ...hex, type: newType, number: newNumber };
+      })
+    }));
+  };
+
+  const handleHexRightClick = (e: React.MouseEvent, hexId: string) => {
+    e.preventDefault();
+    setBoardSetup(prev => ({
+      ...prev,
+      hexTiles: prev.hexTiles.map(hex =>
+        hex.id === hexId
+          ? { ...hex, number: cycleNumber(hex.number) }
+          : hex
+      )
+    }));
+  };
 
   const [boardName, setBoardName] = useState('');
   const { savedBoards, saveBoard } = useGameStore();
@@ -280,6 +335,23 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Board Setup</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <HexBoard
+              hexes={boardSetup.hexTiles}
+              size={50}
+              onHexClick={handleHexClick}
+              onHexRightClick={handleHexRightClick}
+            />
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Click hex to change resource type, right-click to change number
+            </p>
           </CardContent>
         </Card>
 
