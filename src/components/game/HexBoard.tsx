@@ -9,6 +9,8 @@ interface HexProps {
   playerColors: Record<string, PlayerColor>;
   onVertexClick?: (vertex: Vertex) => void;
   onEdgeClick?: (edge: Edge) => void;
+  onHexClick?: (id: string) => void;
+  onHexRightClick?: (id: string) => void;
 }
 
 const resourceColors: Record<ResourceType, string> = {
@@ -36,7 +38,9 @@ const Hex: React.FC<HexProps> = ({
   roads,
   playerColors,
   onVertexClick,
-  onEdgeClick
+  onEdgeClick,
+  onHexClick,
+  onHexRightClick
 }) => {
   const hexHeight = size * 2;
   const hexWidth = Math.sqrt(3) * size;
@@ -65,10 +69,15 @@ const Hex: React.FC<HexProps> = ({
     <div className="relative inline-block" style={{ width: hexWidth, height: hexHeight }}>
       {/* Base hexagon */}
       <svg width={hexWidth} height={hexHeight} className="absolute top-0 left-0">
-        <polygon 
-          points={vertices.map(v => `${v.x},${v.y}`).join(' ')} 
-          className={`${resourceColors[hex.type]} stroke-gray-600`} 
+        <polygon
+          points={vertices.map(v => `${v.x},${v.y}`).join(' ')}
+          className={`${resourceColors[hex.type]} stroke-gray-600 cursor-pointer`}
           strokeWidth="2"
+          onClick={() => onHexClick?.(hex.id)}
+          onContextMenu={e => {
+            e.preventDefault();
+            onHexRightClick?.(hex.id);
+          }}
         />
         
         {/* Draw roads */}
@@ -173,6 +182,8 @@ interface HexBoardProps {
   size?: number;
   onVertexClick?: (vertex: Vertex) => void;
   onEdgeClick?: (edge: Edge) => void;
+  onHexClick?: (id: string) => void;
+  onHexRightClick?: (id: string) => void;
 }
 
 export const HexBoard: React.FC<HexBoardProps> = ({ 
@@ -183,7 +194,9 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   className = "",
   size = 70,
   onVertexClick,
-  onEdgeClick
+  onEdgeClick,
+  onHexClick,
+  onHexRightClick
 }) => {
   const hexWidth = Math.sqrt(3) * size;
   const hexHeight = size * 2;
@@ -239,6 +252,8 @@ export const HexBoard: React.FC<HexBoardProps> = ({
                 playerColors={playerColors}
                 onVertexClick={onVertexClick}
                 onEdgeClick={onEdgeClick}
+                onHexClick={onHexClick}
+                onHexRightClick={onHexRightClick}
               />
             </div>
           ))}
