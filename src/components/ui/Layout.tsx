@@ -61,7 +61,7 @@ const Sidebar: React.FC = () => {
         <div className="flex items-center h-16 flex-shrink-0 px-4 bg-emerald-950">
           <div className="flex items-center space-x-2">
             <Hexagon className="h-8 w-8 text-emerald-500" />
-            <span className="text-white font-bold text-lg">CatanMaster</span>
+            <span className="text-white font-bold text-lg">CatanMaster Pro</span>
           </div>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1">
