@@ -39,6 +39,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      - name: Add CNAME file
+        run: echo 'catanmasterpro.com' > docs/CNAME
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
