@@ -16,26 +16,26 @@ interface HexProps {
 }
 
 const resourceColors: Record<ResourceType, string> = {
-  wood: '#10b981', // emerald-500
-  brick: '#dc2626', // red-600
-  sheep: '#22c55e', // green-500
-  wheat: '#eab308', // yellow-500
-  ore: '#6b7280', // gray-500
-  desert: '#fbbf24', // amber-400
+  wood: '#10b981', // emerald-500 - 森林
+  brick: '#dc2626', // red-600 - 丘陵
+  sheep: '#22c55e', // green-500 - 牧草地
+  wheat: '#eab308', // yellow-500 - 農地
+  ore: '#6b7280', // gray-500 - 山地
+  desert: '#fbbf24', // amber-400 - 砂漠
 };
 
 const resourceNames: Record<ResourceType, string> = {
-  wood: 'Forest',
-  brick: 'Hills',
-  sheep: 'Pasture',
-  wheat: 'Fields',
-  ore: 'Mountains',
-  desert: 'Desert',
+  wood: '森林',
+  brick: '丘陵',
+  sheep: '牧草地',
+  wheat: '農地',
+  ore: '山地',
+  desert: '砂漠',
 };
 
 const Hex: React.FC<HexProps> = ({ 
   hex, 
-  size = 70,
+  size = 50,
   buildings,
   roads,
   harbors,
@@ -46,24 +46,17 @@ const Hex: React.FC<HexProps> = ({
   onHexClick,
   isInteractive = false
 }) => {
-  const hexHeight = size * 2;
-  const hexWidth = Math.sqrt(3) * size;
-  
-  // Calculate center position
-  const centerX = (hex.position.x * hexWidth * 0.75) + hexWidth / 2;
-  const centerY = (hex.position.y * hexHeight * 0.5) + hexHeight / 2;
-  
-  // Calculate vertices for the hexagon
+  // 六角形の頂点を計算（フラットトップ）
   const vertices: Vertex[] = [];
   for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 3) * i;
+    const angle = (Math.PI / 3) * i - Math.PI / 2; // -90度回転でフラットトップに
     vertices.push({
-      x: centerX + size * Math.cos(angle),
-      y: centerY + size * Math.sin(angle)
+      x: size * Math.cos(angle),
+      y: size * Math.sin(angle)
     });
   }
 
-  // Create edges between vertices
+  // エッジを作成
   const edges: Edge[] = vertices.map((vertex, i) => ({
     from: vertex,
     to: vertices[(i + 1) % vertices.length]
@@ -79,7 +72,7 @@ const Hex: React.FC<HexProps> = ({
 
   return (
     <g>
-      {/* Base hexagon */}
+      {/* 六角形の基本形状 */}
       <polygon 
         points={vertices.map(v => `${v.x},${v.y}`).join(' ')} 
         fill={resourceColors[hex.type]}
@@ -89,10 +82,10 @@ const Hex: React.FC<HexProps> = ({
         onClick={() => onHexClick?.(hex)}
       />
       
-      {/* Resource label */}
+      {/* リソース名 */}
       <text
-        x={centerX}
-        y={centerY - 8}
+        x={0}
+        y={-8}
         textAnchor="middle"
         fill={textColor}
         className="text-xs font-medium pointer-events-none"
@@ -100,12 +93,12 @@ const Hex: React.FC<HexProps> = ({
         {resourceNames[hex.type]}
       </text>
       
-      {/* Number token */}
+      {/* 数字トークン */}
       {hex.number && (
         <>
           <circle
-            cx={centerX}
-            cy={centerY + 8}
+            cx={0}
+            cy={8}
             r="12"
             fill="#f3f4f6"
             stroke="#374151"
@@ -113,8 +106,8 @@ const Hex: React.FC<HexProps> = ({
             className="pointer-events-none"
           />
           <text
-            x={centerX}
-            y={centerY + 12}
+            x={0}
+            y={12}
             textAnchor="middle"
             fill={hex.number === 6 || hex.number === 8 ? '#dc2626' : '#374151'}
             className="text-sm font-bold pointer-events-none"
@@ -124,18 +117,18 @@ const Hex: React.FC<HexProps> = ({
         </>
       )}
       
-      {/* Robber */}
+      {/* 盗賊 */}
       {isRobber && (
         <circle
-          cx={centerX}
-          cy={centerY}
+          cx={0}
+          cy={0}
           r="8"
           fill="#1f2937"
           className="pointer-events-none"
         />
       )}
       
-      {/* Draw roads */}
+      {/* 道路 */}
       {roads.map((road, index) => (
         <line
           key={`road-${index}`}
@@ -148,7 +141,7 @@ const Hex: React.FC<HexProps> = ({
         />
       ))}
       
-      {/* Draw buildings */}
+      {/* 建物 */}
       {buildings.map((building, index) => {
         const color = playerColors[building.playerId] || '#000000';
         return building.type === 'settlement' ? (
@@ -175,7 +168,7 @@ const Hex: React.FC<HexProps> = ({
         );
       })}
       
-      {/* Clickable vertices for interactive mode */}
+      {/* インタラクティブな頂点 */}
       {isInteractive && vertices.map((vertex, index) => (
         <circle
           key={`vertex-${index}`}
@@ -188,7 +181,7 @@ const Hex: React.FC<HexProps> = ({
         />
       ))}
       
-      {/* Clickable edges for interactive mode */}
+      {/* インタラクティブなエッジ */}
       {isInteractive && edges.map((edge, index) => {
         const midX = (edge.from.x + edge.to.x) / 2;
         const midY = (edge.from.y + edge.to.y) / 2;
@@ -208,6 +201,63 @@ const Hex: React.FC<HexProps> = ({
           />
         );
       })}
+    </g>
+  );
+};
+
+// 海タイル（港）コンポーネント
+interface OceanTileProps {
+  position: { x: number; y: number };
+  harbor?: Harbor;
+  size?: number;
+}
+
+const OceanTile: React.FC<OceanTileProps> = ({ position, harbor, size = 50 }) => {
+  // 六角形の頂点を計算
+  const vertices: Vertex[] = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i - Math.PI / 2;
+    vertices.push({
+      x: size * Math.cos(angle),
+      y: size * Math.sin(angle)
+    });
+  }
+
+  return (
+    <g>
+      {/* 海の六角形 */}
+      <polygon 
+        points={vertices.map(v => `${v.x},${v.y}`).join(' ')} 
+        fill="#3b82f6"
+        stroke="#1e40af" 
+        strokeWidth="2"
+        opacity="0.7"
+      />
+      
+      {/* 港の表示 */}
+      {harbor && (
+        <>
+          <rect
+            x={-20}
+            y={-8}
+            width="40"
+            height="16"
+            fill="#1e40af"
+            stroke="#1e3a8a"
+            strokeWidth="1"
+            rx="3"
+          />
+          <text
+            x={0}
+            y={3}
+            textAnchor="middle"
+            fill="#ffffff"
+            className="text-xs font-bold pointer-events-none"
+          >
+            {harbor.type === 'any' ? '3:1' : `2:1 ${harbor.type}`}
+          </text>
+        </>
+      )}
     </g>
   );
 };
@@ -235,91 +285,101 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   playerColors = {},
   robberPosition,
   className = "",
-  size = 70,
+  size = 50,
   onVertexClick,
   onEdgeClick,
   onHexClick,
   isInteractive = false
 }) => {
+  // 六角形のサイズ計算
   const hexWidth = Math.sqrt(3) * size;
   const hexHeight = size * 2;
   
-  // Group hexes by row
-  const hexesByRow: { [key: number]: HexTile[] } = {};
-  hexes.forEach(hex => {
-    const { y } = hex.position;
-    if (!hexesByRow[y]) {
-      hexesByRow[y] = [];
-    }
-    hexesByRow[y].push(hex);
-  });
+  // カタンボードの正しい配置を計算
+  const getHexPosition = (col: number, row: number) => {
+    const x = col * hexWidth * 0.75;
+    const y = row * hexHeight * 0.5 + (col % 2) * hexHeight * 0.25;
+    return { x, y };
+  };
 
-  // Sort rows and hexes within rows
-  const sortedRows = Object.keys(hexesByRow)
-    .map(Number)
-    .sort((a, b) => a - b);
+  // 海タイルの位置を定義（カタンボードの周囲）
+  const oceanPositions = [
+    // 上の行
+    { col: -1, row: -1 }, { col: 0, row: -2 }, { col: 1, row: -2 }, { col: 2, row: -2 }, { col: 3, row: -1 },
+    // 右側
+    { col: 4, row: 0 }, { col: 4, row: 1 }, { col: 4, row: 2 },
+    // 下の行
+    { col: 3, row: 3 }, { col: 2, row: 4 }, { col: 1, row: 4 }, { col: 0, row: 4 }, { col: -1, row: 3 },
+    // 左側
+    { col: -2, row: 2 }, { col: -2, row: 1 }, { col: -2, row: 0 }
+  ];
+
+  // ボードの境界を計算
+  const allPositions = [
+    ...hexes.map(hex => ({ col: hex.position.x, row: hex.position.y })),
+    ...oceanPositions
+  ];
   
-  sortedRows.forEach(rowIndex => {
-    hexesByRow[rowIndex].sort((a, b) => a.position.x - b.position.x);
-  });
-
-  // Calculate board dimensions
-  const boardWidth = hexWidth * 6;
-  const boardHeight = hexHeight * 4;
+  const minX = Math.min(...allPositions.map(pos => getHexPosition(pos.col, pos.row).x)) - size;
+  const maxX = Math.max(...allPositions.map(pos => getHexPosition(pos.col, pos.row).x)) + size;
+  const minY = Math.min(...allPositions.map(pos => getHexPosition(pos.col, pos.row).y)) - size;
+  const maxY = Math.max(...allPositions.map(pos => getHexPosition(pos.col, pos.row).y)) + size;
+  
+  const boardWidth = maxX - minX + size * 2;
+  const boardHeight = maxY - minY + size * 2;
 
   return (
     <div className={`relative ${className}`}>
-      <svg width={boardWidth} height={boardHeight} className="border rounded-lg">
-        {/* Render all hexes */}
-        {hexes.map(hex => (
-          <Hex 
-            key={hex.id}
-            hex={hex} 
-            size={size}
-            buildings={buildings.filter(b => 
-              Math.abs(b.position.x - hex.position.x) < size &&
-              Math.abs(b.position.y - hex.position.y) < size
-            )}
-            roads={roads.filter(r => 
-              Math.abs(r.position.from.x - hex.position.x) < size &&
-              Math.abs(r.position.from.y - hex.position.y) < size
-            )}
-            harbors={harbors}
-            playerColors={playerColors}
-            robberPosition={robberPosition}
-            onVertexClick={onVertexClick}
-            onEdgeClick={onEdgeClick}
-            onHexClick={onHexClick}
-            isInteractive={isInteractive}
-          />
-        ))}
-        
-        {/* Render harbors */}
-        {harbors.map((harbor, index) => {
-          const centerX = (harbor.position.x * hexWidth * 0.75) + hexWidth / 2;
-          const centerY = (harbor.position.y * hexHeight * 0.5) + hexHeight / 2;
+      <svg 
+        width={boardWidth} 
+        height={boardHeight} 
+        className="border rounded-lg bg-blue-50"
+        viewBox={`${minX - size} ${minY - size} ${boardWidth} ${boardHeight}`}
+      >
+        {/* 海タイルを描画 */}
+        {oceanPositions.map((oceanPos, index) => {
+          const pos = getHexPosition(oceanPos.col, oceanPos.row);
+          const harbor = harbors.find(h => 
+            Math.abs(h.position.x - oceanPos.col) < 0.5 && 
+            Math.abs(h.position.y - oceanPos.row) < 0.5
+          );
           
           return (
-            <g key={`harbor-${index}`}>
-              <rect
-                x={centerX - 15}
-                y={centerY - 8}
-                width="30"
-                height="16"
-                fill="#3b82f6"
-                stroke="#1e40af"
-                strokeWidth="1"
-                rx="2"
+            <g key={`ocean-${index}`} transform={`translate(${pos.x}, ${pos.y})`}>
+              <OceanTile 
+                position={oceanPos}
+                harbor={harbor}
+                size={size}
               />
-              <text
-                x={centerX}
-                y={centerY + 3}
-                textAnchor="middle"
-                fill="#ffffff"
-                className="text-xs font-medium pointer-events-none"
-              >
-                {harbor.type === 'any' ? '3:1' : '2:1'}
-              </text>
+            </g>
+          );
+        })}
+        
+        {/* 陸地タイルを描画 */}
+        {hexes.map(hex => {
+          const pos = getHexPosition(hex.position.x, hex.position.y);
+          
+          return (
+            <g key={hex.id} transform={`translate(${pos.x}, ${pos.y})`}>
+              <Hex 
+                hex={hex} 
+                size={size}
+                buildings={buildings.filter(b => 
+                  Math.abs(b.position.x - pos.x) < size &&
+                  Math.abs(b.position.y - pos.y) < size
+                )}
+                roads={roads.filter(r => 
+                  Math.abs(r.position.from.x - pos.x) < size &&
+                  Math.abs(r.position.from.y - pos.y) < size
+                )}
+                harbors={harbors}
+                playerColors={playerColors}
+                robberPosition={robberPosition}
+                onVertexClick={onVertexClick}
+                onEdgeClick={onEdgeClick}
+                onHexClick={onHexClick}
+                isInteractive={isInteractive}
+              />
             </g>
           );
         })}

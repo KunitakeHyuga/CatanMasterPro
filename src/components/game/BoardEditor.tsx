@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { HexTile, ResourceType, Harbor, HarborType, BoardSetup } from '../../models/types';
+import { HexBoard } from './HexBoard';
 import { Shuffle, RotateCcw, Save, Download, Upload } from 'lucide-react';
 
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert'];
@@ -123,24 +124,24 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Tools Panel */}
+      {/* ツールパネル */}
       <Card>
         <CardHeader>
-          <CardTitle>Board Editor Tools</CardTitle>
+          <CardTitle>ボードエディター</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Tool Selection */}
+            {/* ツール選択 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Edit Mode
+                編集モード
               </label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { key: 'resource', label: 'Resources' },
-                  { key: 'number', label: 'Numbers' },
-                  { key: 'harbor', label: 'Harbors' },
-                  { key: 'robber', label: 'Robber' }
+                  { key: 'resource', label: 'リソース' },
+                  { key: 'number', label: '数字' },
+                  { key: 'harbor', label: '港' },
+                  { key: 'robber', label: '盗賊' }
                 ].map(tool => (
                   <Button
                     key={tool.key}
@@ -154,11 +155,11 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
               </div>
             </div>
 
-            {/* Resource Selection */}
+            {/* リソース選択 */}
             {selectedTool === 'resource' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Resource
+                  リソースを選択
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {resourceTypes.map(resource => (
@@ -169,18 +170,22 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
                       onClick={() => setSelectedResource(resource)}
                       className="capitalize"
                     >
-                      {resource}
+                      {resource === 'wood' ? '森林' :
+                       resource === 'brick' ? '丘陵' :
+                       resource === 'sheep' ? '牧草地' :
+                       resource === 'wheat' ? '農地' :
+                       resource === 'ore' ? '山地' : '砂漠'}
                     </Button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Number Selection */}
+            {/* 数字選択 */}
             {selectedTool === 'number' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Number
+                  数字を選択
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(number => (
@@ -198,11 +203,11 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
               </div>
             )}
 
-            {/* Harbor Selection */}
+            {/* 港選択 */}
             {selectedTool === 'harbor' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Harbor Type
+                  港の種類を選択
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {harborTypes.map(harbor => (
@@ -220,7 +225,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
               </div>
             )}
 
-            {/* Action Buttons */}
+            {/* アクションボタン */}
             <div className="flex flex-wrap gap-2 pt-4 border-t">
               <Button
                 variant="secondary"
@@ -228,7 +233,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
                 onClick={randomizeBoard}
                 icon={<Shuffle size={16} />}
               >
-                Randomize
+                ランダム生成
               </Button>
               <Button
                 variant="outline"
@@ -236,7 +241,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
                 onClick={resetBoard}
                 icon={<RotateCcw size={16} />}
               >
-                Reset
+                リセット
               </Button>
               <Button
                 variant="outline"
@@ -244,7 +249,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
                 onClick={exportBoard}
                 icon={<Download size={16} />}
               >
-                Export
+                エクスポート
               </Button>
               <label className="inline-flex">
                 <Button
@@ -253,7 +258,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
                   as="span"
                   icon={<Upload size={16} />}
                 >
-                  Import
+                  インポート
                 </Button>
                 <input
                   type="file"
@@ -267,237 +272,79 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         </CardContent>
       </Card>
 
-      {/* Board Display */}
+      {/* ボード表示 */}
       <Card>
         <CardHeader>
-          <CardTitle>Board Layout</CardTitle>
+          <CardTitle>ボードレイアウト</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <InteractiveBoardDisplay
-            hexTiles={hexTiles}
+          <HexBoard
+            hexes={hexTiles}
             harbors={harbors}
             robberPosition={robberPosition}
             onHexClick={handleHexClick}
-            selectedTool={selectedTool}
+            isInteractive={true}
+            size={60}
           />
         </CardContent>
       </Card>
 
-      {/* Save/Cancel Buttons */}
+      {/* 保存/キャンセルボタン */}
       <div className="flex justify-end space-x-3">
         <Button variant="outline" onClick={onCancel}>
-          Cancel
+          キャンセル
         </Button>
         <Button onClick={handleSave} icon={<Save size={16} />}>
-          Save Board
+          ボードを保存
         </Button>
       </div>
     </div>
   );
 };
 
-// Interactive Board Display Component
-interface InteractiveBoardDisplayProps {
-  hexTiles: HexTile[];
-  harbors: Harbor[];
-  robberPosition: { x: number; y: number };
-  onHexClick: (hex: HexTile) => void;
-  selectedTool: string;
-}
-
-const InteractiveBoardDisplay: React.FC<InteractiveBoardDisplayProps> = ({
-  hexTiles,
-  harbors,
-  robberPosition,
-  onHexClick,
-  selectedTool
-}) => {
-  const size = 60;
-  const hexHeight = size * 2;
-  const hexWidth = Math.sqrt(3) * size;
-  
-  const resourceColors: Record<ResourceType, string> = {
-    wood: '#10b981', // emerald-500
-    brick: '#dc2626', // red-600
-    sheep: '#22c55e', // green-500
-    wheat: '#eab308', // yellow-500
-    ore: '#6b7280', // gray-500
-    desert: '#fbbf24', // amber-400
-  };
-
-  const resourceNames: Record<ResourceType, string> = {
-    wood: 'Forest',
-    brick: 'Hills',
-    sheep: 'Pasture',
-    wheat: 'Fields',
-    ore: 'Mountains',
-    desert: 'Desert',
-  };
-
-  // Group hexes by row for proper layout
-  const hexesByRow: { [key: number]: HexTile[] } = {};
-  hexTiles.forEach(hex => {
-    const { y } = hex.position;
-    if (!hexesByRow[y]) hexesByRow[y] = [];
-    hexesByRow[y].push(hex);
-  });
-
-  const sortedRows = Object.keys(hexesByRow)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  sortedRows.forEach(rowIndex => {
-    hexesByRow[rowIndex].sort((a, b) => a.position.x - b.position.x);
-  });
-
-  return (
-    <div className="relative">
-      <svg width={hexWidth * 6} height={hexHeight * 4} className="border rounded-lg">
-        {/* Render hexes */}
-        {sortedRows.map(rowIndex => 
-          hexesByRow[rowIndex].map(hex => {
-            const centerX = (hex.position.x * hexWidth * 0.75) + hexWidth / 2;
-            const centerY = (hex.position.y * hexHeight * 0.5) + hexHeight / 2;
-            
-            // Calculate hex vertices
-            const vertices = [];
-            for (let i = 0; i < 6; i++) {
-              const angle = (Math.PI / 3) * i;
-              const x = centerX + size * Math.cos(angle);
-              const y = centerY + size * Math.sin(angle);
-              vertices.push(`${x},${y}`);
-            }
-
-            const isRobber = robberPosition.x === hex.position.x && robberPosition.y === hex.position.y;
-            const isHighlighted = selectedTool === 'robber' || selectedTool === 'resource' || selectedTool === 'number';
-
-            return (
-              <g key={hex.id}>
-                {/* Hex polygon */}
-                <polygon
-                  points={vertices.join(' ')}
-                  fill={resourceColors[hex.type]}
-                  stroke="#374151"
-                  strokeWidth="2"
-                  className={`cursor-pointer transition-opacity ${
-                    isHighlighted ? 'hover:opacity-80' : ''
-                  }`}
-                  onClick={() => onHexClick(hex)}
-                />
-                
-                {/* Resource label */}
-                <text
-                  x={centerX}
-                  y={centerY - 8}
-                  textAnchor="middle"
-                  className="fill-white text-xs font-medium pointer-events-none"
-                >
-                  {resourceNames[hex.type]}
-                </text>
-                
-                {/* Number token */}
-                {hex.number && (
-                  <>
-                    <circle
-                      cx={centerX}
-                      cy={centerY + 8}
-                      r="12"
-                      fill="#f3f4f6"
-                      stroke="#374151"
-                      strokeWidth="1"
-                      className="pointer-events-none"
-                    />
-                    <text
-                      x={centerX}
-                      y={centerY + 12}
-                      textAnchor="middle"
-                      className={`text-sm font-bold pointer-events-none ${
-                        hex.number === 6 || hex.number === 8 ? 'fill-red-600' : 'fill-gray-800'
-                      }`}
-                    >
-                      {hex.number}
-                    </text>
-                  </>
-                )}
-                
-                {/* Robber */}
-                {isRobber && (
-                  <circle
-                    cx={centerX}
-                    cy={centerY}
-                    r="8"
-                    fill="#1f2937"
-                    className="pointer-events-none"
-                  />
-                )}
-              </g>
-            );
-          })
-        )}
-        
-        {/* Render harbors */}
-        {harbors.map((harbor, index) => {
-          const centerX = (harbor.position.x * hexWidth * 0.75) + hexWidth / 2;
-          const centerY = (harbor.position.y * hexHeight * 0.5) + hexHeight / 2;
-          
-          return (
-            <g key={`harbor-${index}`}>
-              <rect
-                x={centerX - 15}
-                y={centerY - 8}
-                width="30"
-                height="16"
-                fill="#3b82f6"
-                stroke="#1e40af"
-                strokeWidth="1"
-                rx="2"
-              />
-              <text
-                x={centerX}
-                y={centerY + 3}
-                textAnchor="middle"
-                className="fill-white text-xs font-medium pointer-events-none"
-              >
-                {harbor.type === 'any' ? '3:1' : '2:1'}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-};
-
-// Helper functions
+// ヘルパー関数
 function generateStandardBoard(): HexTile[] {
   const hexes: HexTile[] = [];
-  const layout = [3, 4, 5, 4, 3];
-  const standardResources: ResourceType[] = [
-    'ore', 'sheep', 'wood',
-    'wheat', 'brick', 'sheep', 'brick',
-    'wheat', 'wood', 'desert', 'wood', 'ore',
-    'wood', 'ore', 'wheat', 'sheep',
-    'brick', 'wheat', 'sheep'
-  ];
-  const standardNumbers = [10, 2, 9, 12, 6, 4, 10, 9, 11, 3, 8, 8, 3, 4, 5, 5, 6, 11];
   
-  let hexIndex = 0;
-  layout.forEach((rowSize, rowIndex) => {
-    const xOffset = (5 - rowSize) / 2;
+  // カタンボードの標準配置（19個のタイル）
+  const boardLayout = [
+    // 行0: 3個
+    { x: 0, y: 0, resource: 'ore', number: 10 },
+    { x: 1, y: 0, resource: 'sheep', number: 2 },
+    { x: 2, y: 0, resource: 'wood', number: 9 },
     
-    for (let x = 0; x < rowSize; x++) {
-      const resource = standardResources[hexIndex];
-      const number = resource === 'desert' ? undefined : standardNumbers[hexIndex];
-      
-      hexes.push({
-        id: `hex-${hexIndex}`,
-        type: resource,
-        number,
-        position: { x: x + xOffset, y: rowIndex }
-      });
-      
-      hexIndex++;
-    }
+    // 行1: 4個
+    { x: 0, y: 1, resource: 'wheat', number: 12 },
+    { x: 1, y: 1, resource: 'brick', number: 6 },
+    { x: 2, y: 1, resource: 'sheep', number: 4 },
+    { x: 3, y: 1, resource: 'brick', number: 10 },
+    
+    // 行2: 5個（中央行）
+    { x: 0, y: 2, resource: 'wheat', number: 9 },
+    { x: 1, y: 2, resource: 'wood', number: 11 },
+    { x: 2, y: 2, resource: 'desert', number: undefined },
+    { x: 3, y: 2, resource: 'wood', number: 3 },
+    { x: 4, y: 2, resource: 'ore', number: 8 },
+    
+    // 行3: 4個
+    { x: 0, y: 3, resource: 'wood', number: 8 },
+    { x: 1, y: 3, resource: 'ore', number: 3 },
+    { x: 2, y: 3, resource: 'wheat', number: 4 },
+    { x: 3, y: 3, resource: 'sheep', number: 5 },
+    
+    // 行4: 3個
+    { x: 1, y: 4, resource: 'brick', number: 5 },
+    { x: 2, y: 4, resource: 'wheat', number: 6 },
+    { x: 3, y: 4, resource: 'sheep', number: 11 }
+  ];
+  
+  boardLayout.forEach((tile, index) => {
+    hexes.push({
+      id: `hex-${index}`,
+      type: tile.resource as ResourceType,
+      number: tile.number,
+      position: { x: tile.x, y: tile.y }
+    });
   });
   
   return hexes;
@@ -505,14 +352,15 @@ function generateStandardBoard(): HexTile[] {
 
 function generateStandardHarbors(): Harbor[] {
   return [
-    { type: 'any', position: { x: 0, y: 0 } },
-    { type: 'wood', position: { x: 1, y: 0 } },
-    { type: 'any', position: { x: 3, y: 0 } },
+    // 港の配置（海タイルの位置に対応）
+    { type: 'any', position: { x: -1, y: -1 } },
+    { type: 'wood', position: { x: 1, y: -2 } },
+    { type: 'any', position: { x: 3, y: -1 } },
     { type: 'brick', position: { x: 4, y: 1 } },
-    { type: 'any', position: { x: 4, y: 3 } },
-    { type: 'wheat', position: { x: 3, y: 4 } },
+    { type: 'any', position: { x: 4, y: 2 } },
+    { type: 'wheat', position: { x: 3, y: 3 } },
     { type: 'any', position: { x: 1, y: 4 } },
-    { type: 'ore', position: { x: 0, y: 3 } },
-    { type: 'sheep', position: { x: 0, y: 1 } }
+    { type: 'ore', position: { x: -1, y: 3 } },
+    { type: 'sheep', position: { x: -2, y: 1 } }
   ];
 }

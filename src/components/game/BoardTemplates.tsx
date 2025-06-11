@@ -15,23 +15,23 @@ export const BoardTemplates: React.FC<BoardTemplatesProps> = ({
 }) => {
   const standardTemplates = [
     {
-      name: 'Standard Catan',
-      description: 'The classic Catan board layout',
+      name: '標準カタン',
+      description: 'クラシックなカタンボードレイアウト',
       board: generateStandardCatanBoard()
     },
     {
-      name: 'Beginner Setup',
-      description: 'Recommended setup for new players',
+      name: '初心者向け',
+      description: '新しいプレイヤーにおすすめの設定',
       board: generateBeginnerBoard()
     },
     {
-      name: 'Balanced Resources',
-      description: 'Evenly distributed resources',
+      name: 'バランス型',
+      description: '均等に分散されたリソース',
       board: generateBalancedBoard()
     },
     {
-      name: 'Resource Rich',
-      description: 'More resources, faster gameplay',
+      name: 'リソース豊富',
+      description: 'より多くのリソース、高速ゲームプレイ',
       board: generateResourceRichBoard()
     }
   ];
@@ -40,7 +40,7 @@ export const BoardTemplates: React.FC<BoardTemplatesProps> = ({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Standard Templates</CardTitle>
+          <CardTitle>標準テンプレート</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -55,13 +55,14 @@ export const BoardTemplates: React.FC<BoardTemplatesProps> = ({
                     size="sm"
                     onClick={() => onSelectTemplate(template.board)}
                   >
-                    Use Template
+                    使用する
                   </Button>
                 </div>
                 <div className="flex justify-center">
                   <HexBoard 
                     hexes={template.board.hexTiles} 
-                    size={30}
+                    harbors={template.board.harbors}
+                    size={25}
                     className="transform scale-75"
                   />
                 </div>
@@ -74,7 +75,7 @@ export const BoardTemplates: React.FC<BoardTemplatesProps> = ({
       {savedBoards.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Your Saved Boards</CardTitle>
+            <CardTitle>保存済みボード</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -83,21 +84,22 @@ export const BoardTemplates: React.FC<BoardTemplatesProps> = ({
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="font-semibold text-gray-900">
-                        {board.name || `Custom Board ${index + 1}`}
+                        {board.name || `カスタムボード ${index + 1}`}
                       </h3>
-                      <p className="text-sm text-gray-500">Custom board setup</p>
+                      <p className="text-sm text-gray-500">カスタムボード設定</p>
                     </div>
                     <Button
                       size="sm"
                       onClick={() => onSelectTemplate(board)}
                     >
-                      Use Board
+                      使用する
                     </Button>
                   </div>
                   <div className="flex justify-center">
                     <HexBoard 
                       hexes={board.hexTiles} 
-                      size={30}
+                      harbors={board.harbors}
+                      size={25}
                       className="transform scale-75"
                     />
                   </div>
@@ -111,48 +113,61 @@ export const BoardTemplates: React.FC<BoardTemplatesProps> = ({
   );
 };
 
-// Template generation functions
+// テンプレート生成関数
 function generateStandardCatanBoard(): BoardSetup {
   const hexes: HexTile[] = [];
-  const layout = [3, 4, 5, 4, 3];
-  const resources: ResourceType[] = [
-    'ore', 'sheep', 'wood',
-    'wheat', 'brick', 'sheep', 'brick',
-    'wheat', 'wood', 'desert', 'wood', 'ore',
-    'wood', 'ore', 'wheat', 'sheep',
-    'brick', 'wheat', 'sheep'
-  ];
-  const numbers = [10, 2, 9, 12, 6, 4, 10, 9, 11, 3, 8, 8, 3, 4, 5, 5, 6, 11];
   
-  let hexIndex = 0;
-  layout.forEach((rowSize, rowIndex) => {
-    const xOffset = (5 - rowSize) / 2;
+  // 標準カタンボードの配置
+  const boardLayout = [
+    // 行0: 3個
+    { x: 0, y: 0, resource: 'ore', number: 10 },
+    { x: 1, y: 0, resource: 'sheep', number: 2 },
+    { x: 2, y: 0, resource: 'wood', number: 9 },
     
-    for (let x = 0; x < rowSize; x++) {
-      const resource = resources[hexIndex];
-      const number = resource === 'desert' ? undefined : numbers[hexIndex];
-      
-      hexes.push({
-        id: `hex-${hexIndex}`,
-        type: resource,
-        number,
-        position: { x: x + xOffset, y: rowIndex }
-      });
-      
-      hexIndex++;
-    }
+    // 行1: 4個
+    { x: 0, y: 1, resource: 'wheat', number: 12 },
+    { x: 1, y: 1, resource: 'brick', number: 6 },
+    { x: 2, y: 1, resource: 'sheep', number: 4 },
+    { x: 3, y: 1, resource: 'brick', number: 10 },
+    
+    // 行2: 5個（中央行）
+    { x: 0, y: 2, resource: 'wheat', number: 9 },
+    { x: 1, y: 2, resource: 'wood', number: 11 },
+    { x: 2, y: 2, resource: 'desert', number: undefined },
+    { x: 3, y: 2, resource: 'wood', number: 3 },
+    { x: 4, y: 2, resource: 'ore', number: 8 },
+    
+    // 行3: 4個
+    { x: 0, y: 3, resource: 'wood', number: 8 },
+    { x: 1, y: 3, resource: 'ore', number: 3 },
+    { x: 2, y: 3, resource: 'wheat', number: 4 },
+    { x: 3, y: 3, resource: 'sheep', number: 5 },
+    
+    // 行4: 3個
+    { x: 1, y: 4, resource: 'brick', number: 5 },
+    { x: 2, y: 4, resource: 'wheat', number: 6 },
+    { x: 3, y: 4, resource: 'sheep', number: 11 }
+  ];
+  
+  boardLayout.forEach((tile, index) => {
+    hexes.push({
+      id: `hex-${index}`,
+      type: tile.resource as ResourceType,
+      number: tile.number,
+      position: { x: tile.x, y: tile.y }
+    });
   });
 
   const harbors: Harbor[] = [
-    { type: 'any', position: { x: 0, y: 0 } },
-    { type: 'wood', position: { x: 1, y: 0 } },
-    { type: 'any', position: { x: 3, y: 0 } },
+    { type: 'any', position: { x: -1, y: -1 } },
+    { type: 'wood', position: { x: 1, y: -2 } },
+    { type: 'any', position: { x: 3, y: -1 } },
     { type: 'brick', position: { x: 4, y: 1 } },
-    { type: 'any', position: { x: 4, y: 3 } },
-    { type: 'wheat', position: { x: 3, y: 4 } },
+    { type: 'any', position: { x: 4, y: 2 } },
+    { type: 'wheat', position: { x: 3, y: 3 } },
     { type: 'any', position: { x: 1, y: 4 } },
-    { type: 'ore', position: { x: 0, y: 3 } },
-    { type: 'sheep', position: { x: 0, y: 1 } }
+    { type: 'ore', position: { x: -1, y: 3 } },
+    { type: 'sheep', position: { x: -2, y: 1 } }
   ];
   
   return {
@@ -167,12 +182,13 @@ function generateStandardCatanBoard(): BoardSetup {
 
 function generateBeginnerBoard(): BoardSetup {
   const board = generateStandardCatanBoard();
-  // Modify for beginner-friendly setup
+  // 初心者向けの数字配置
   const beginnerNumbers = [6, 8, 5, 9, 4, 10, 3, 11, 2, 12, 6, 8, 5, 9, 4, 10, 3, 11];
   
-  board.hexTiles.forEach((hex, index) => {
+  let numberIndex = 0;
+  board.hexTiles.forEach(hex => {
     if (hex.type !== 'desert') {
-      hex.number = beginnerNumbers[index];
+      hex.number = beginnerNumbers[numberIndex++];
     }
   });
   
@@ -182,7 +198,7 @@ function generateBeginnerBoard(): BoardSetup {
 function generateBalancedBoard(): BoardSetup {
   const board = generateStandardCatanBoard();
   
-  // Shuffle resources for balance
+  // バランスの取れたリソース配置
   const resources: ResourceType[] = [
     'wood', 'wood', 'wood', 'wood',
     'brick', 'brick', 'brick',
@@ -211,7 +227,7 @@ function generateBalancedBoard(): BoardSetup {
 function generateResourceRichBoard(): BoardSetup {
   const board = generateStandardCatanBoard();
   
-  // More high-probability numbers
+  // より高確率の数字を多く配置
   const richNumbers = [6, 8, 5, 9, 6, 8, 5, 9, 4, 10, 4, 10, 3, 11, 3, 11, 2, 12];
   
   let numberIndex = 0;
