@@ -1,49 +1,15 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
-import { Plus, Minus, UserPlus, X, Save } from 'lucide-react';
+import { BoardEditor } from './BoardEditor';
+import { BoardTemplates } from './BoardTemplates';
+import { Plus, Minus, UserPlus, X, Save, Settings, Grid } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { GameSession, PlayerColor, ResourceType, HexTile, GamePlayer } from '../../models/types';
+import { GameSession, PlayerColor, GamePlayer, BoardSetup } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
 
 const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 'brown'];
-const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert'];
-
-// Simplified board generation for the MVP
-const generateDefaultBoard = (): HexTile[] => {
-  // Create a basic hexagonal board with 19 tiles
-  const hexes: HexTile[] = [];
-  const layout = [3, 4, 5, 4, 3]; // Number of hexes in each row
-  
-  let hexId = 0;
-  let yPos = 0;
-  
-  layout.forEach((rowSize, rowIndex) => {
-    const xOffset = (5 - rowSize) / 2; // Center the row
-    
-    for (let x = 0; x < rowSize; x++) {
-      const resourceIndex = (hexId % (resourceTypes.length - 1)); // Exclude desert
-      const resourceType = hexId === 9 ? 'desert' : resourceTypes[resourceIndex];
-      
-      hexes.push({
-        id: `hex-${hexId}`,
-        type: resourceType,
-        number: resourceType !== 'desert' ? [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12][hexId % 18] : undefined,
-        position: {
-          x: x + xOffset,
-          y: rowIndex
-        }
-      });
-      
-      hexId++;
-    }
-    
-    yPos++;
-  });
-  
-  return hexes;
-};
 
 interface GameFormProps {
   onSave: () => void;
@@ -51,7 +17,7 @@ interface GameFormProps {
 }
 
 export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
-  const { players, addGame, updateGame } = useGameStore();
+  const { players, addGame, updateGame, savedBoards, saveBoard } = useGameStore();
   
   const [date, setDate] = useState(initialGame?.date || format(new Date(), 'yyyy-MM-dd'));
   const [duration, setDuration] = useState(initialGame?.duration || 60);
@@ -63,32 +29,13 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     initialGame?.players || []
   );
   
-  const [boardSetup, setBoardSetup] = useState<BoardSetup>({
-    hexTiles: generateDefaultBoard(),
-    numberTokens: [],
-    harbors: [],
-    robberPosition: { x: 0, y: 0 },
-    buildings: [],
-    roads: []
-  });
+  const [boardSetup, setBoardSetup] = useState<BoardSetup>(
+    initialGame?.boardSetup || generateDefaultBoard()
+  );
 
+  const [showBoardEditor, setShowBoardEditor] = useState(false);
+  const [showBoardTemplates, setShowBoardTemplates] = useState(false);
   const [boardName, setBoardName] = useState('');
-  const { savedBoards, saveBoard } = useGameStore();
-
-  const handleSaveBoard = () => {
-    if (!boardName.trim()) {
-      alert('Please enter a name for the board setup');
-      return;
-    }
-    
-    saveBoard({
-      ...boardSetup,
-      name: boardName.trim()
-    });
-    
-    setBoardName('');
-    alert('Board setup saved successfully!');
-  };
 
   const addPlayer = () => {
     if (gamePlayers.length >= 6) return;
@@ -120,7 +67,6 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   
   const removePlayer = (id: string) => {
     const updatedPlayers = gamePlayers.filter(player => player.id !== id);
-    // Update ranks
     const rankedPlayers = updatedPlayers.map((player, index) => ({
       ...player,
       rank: index + 1
@@ -133,7 +79,6 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
       player.id === id ? { ...player, score } : player
     );
     
-    // Sort by score and update ranks
     const sortedPlayers = [...updatedPlayers].sort((a, b) => b.score - a.score);
     const rankedPlayers = sortedPlayers.map((player, index) => ({
       ...player,
@@ -152,6 +97,22 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleSaveBoard = (board: BoardSetup) => {
+    if (!boardName.trim()) {
+      alert('Please enter a name for the board setup');
+      return;
+    }
+    
+    saveBoard({
+      ...board,
+      name: boardName.trim()
+    });
+    
+    setBoardName('');
+    setShowBoardEditor(false);
+    alert('Board setup saved successfully!');
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -180,6 +141,66 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     
     onSave();
   };
+
+  if (showBoardEditor) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Board Editor</h2>
+          <div className="flex items-center space-x-3">
+            <input
+              type="text"
+              placeholder="Board name (optional)"
+              value={boardName}
+              onChange={(e) => setBoardName(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+            />
+            <Button
+              variant="outline"
+              onClick={() => setShowBoardEditor(false)}
+            >
+              Back to Game
+            </Button>
+          </div>
+        </div>
+        <BoardEditor
+          initialBoard={boardSetup}
+          onSave={(board) => {
+            setBoardSetup(board);
+            if (boardName.trim()) {
+              handleSaveBoard(board);
+            } else {
+              setShowBoardEditor(false);
+            }
+          }}
+          onCancel={() => setShowBoardEditor(false)}
+        />
+      </div>
+    );
+  }
+
+  if (showBoardTemplates) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Board Templates</h2>
+          <Button
+            variant="outline"
+            onClick={() => setShowBoardTemplates(false)}
+          >
+            Back to Game
+          </Button>
+        </div>
+        <BoardTemplates
+          savedBoards={savedBoards}
+          onSelectTemplate={(board) => {
+            setBoardSetup(board);
+            setShowBoardTemplates(false);
+          }}
+        />
+      </div>
+    );
+  }
   
   return (
     <form onSubmit={handleSubmit}>
@@ -284,6 +305,39 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
         </Card>
 
         <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Board Setup</CardTitle>
+            <div className="flex space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBoardTemplates(true)}
+                icon={<Grid size={16} />}
+              >
+                Templates
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBoardEditor(true)}
+                icon={<Settings size={16} />}
+              >
+                Edit Board
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-center">
+              <div className="transform scale-75">
+                <HexBoard hexes={boardSetup.hexTiles} size={40} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader>
             <CardTitle>Notes & Tags</CardTitle>
           </CardHeader>
@@ -348,64 +402,6 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Save Board Setup</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="boardName" className="block text-sm font-medium text-gray-700">
-                  Board Setup Name
-                </label>
-                <div className="mt-1 flex rounded-md shadow-sm">
-                  <input
-                    type="text"
-                    id="boardName"
-                    value={boardName}
-                    onChange={(e) => setBoardName(e.target.value)}
-                    className="block w-full rounded-none rounded-l-md border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
-                    placeholder="Enter a name for this board setup"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleSaveBoard}
-                    className="rounded-l-none"
-                  >
-                    Save Board
-                  </Button>
-                </div>
-              </div>
-              
-              {savedBoards.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Saved Board Setups
-                  </label>
-                  <div className="space-y-2">
-                    {savedBoards.map((saved) => (
-                      <div
-                        key={saved.id}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
-                      >
-                        <span className="font-medium">{saved.name}</span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setBoardSetup(saved)}
-                        >
-                          Load
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
       
       <div className="mt-6 flex justify-end space-x-3">
@@ -426,3 +422,44 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     </form>
   );
 };
+
+// Simplified board generation for the MVP
+const generateDefaultBoard = () => {
+  const hexes = [];
+  const layout = [3, 4, 5, 4, 3];
+  const resources = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert'];
+  
+  let hexId = 0;
+  layout.forEach((rowSize, rowIndex) => {
+    const xOffset = (5 - rowSize) / 2;
+    
+    for (let x = 0; x < rowSize; x++) {
+      const resourceIndex = hexId % (resources.length - 1);
+      const resourceType = hexId === 9 ? 'desert' : resources[resourceIndex];
+      
+      hexes.push({
+        id: `hex-${hexId}`,
+        type: resourceType,
+        number: resourceType !== 'desert' ? [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12][hexId % 18] : undefined,
+        position: {
+          x: x + xOffset,
+          y: rowIndex
+        }
+      });
+      
+      hexId++;
+    }
+  });
+  
+  return {
+    hexTiles: hexes,
+    numberTokens: [],
+    harbors: [],
+    robberPosition: { x: 2, y: 2 },
+    buildings: [],
+    roads: []
+  };
+};
+
+// Import HexBoard component
+import { HexBoard } from './HexBoard';

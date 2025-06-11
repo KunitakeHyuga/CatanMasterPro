@@ -73,9 +73,17 @@ export interface Harbor {
   };
 }
 
+export interface NumberToken {
+  position: {
+    x: number;
+    y: number;
+  };
+  value: number;
+}
+
 export interface BoardSetup {
   hexTiles: HexTile[];
-  numberTokens: {position: {x: number, y: number}, value: number}[];
+  numberTokens: NumberToken[];
   harbors: Harbor[];
   robberPosition: {x: number, y: number};
   name?: string;
