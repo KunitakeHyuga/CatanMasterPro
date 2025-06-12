@@ -291,14 +291,10 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   onHexClick,
   isInteractive = false
 }) => {
-  // 六角形のサイズ計算
-  const hexWidth = Math.sqrt(3) * size;
-  const hexHeight = size * 2;
-  
   // カタンボードの正しい配置を計算
   const getHexPosition = (col: number, row: number) => {
-    const x = col * hexWidth * 0.75;
-    const y = row * hexHeight * 0.5 + (col % 2) * hexHeight * 0.25;
+    const x = col * (size * Math.sqrt(3));
+    const y = row * (size * 1.5); // 奇数列をずらす必要はない
     return { x, y };
   };
 
