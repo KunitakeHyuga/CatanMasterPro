@@ -162,10 +162,10 @@ const Hex: React.FC<HexProps> = ({
       ))}
       
       {/* インタラクティブなエッジ（道路配置用） */}
-      {isInteractive && edges.map((e, i) => {
-        const midX = (e.from.x + e.to.x) / 2;
-        const midY = (e.from.y + e.to.y) / 2;
-        const angle = (Math.atan2(e.to.y - e.from.y, e.to.x - e.from.x) * 180) / Math.PI;
+      {isInteractive && edges.map((edge, i) => {
+        const midX = (edge.from.x + edge.to.x) / 2;
+        const midY = (edge.from.y + edge.to.y) / 2;
+        const angle = (Math.atan2(edge.to.y - edge.from.y, edge.to.x - edge.from.x) * 180) / Math.PI;
         return (
           <rect
             key={i}
@@ -178,7 +178,7 @@ const Hex: React.FC<HexProps> = ({
             className="hover:fill-gray-200 opacity-0 hover:opacity-50 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              onEdgeClick?.(e);
+              onEdgeClick?.(edge);
             }}
           />
         );
