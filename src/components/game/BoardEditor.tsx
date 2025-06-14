@@ -107,10 +107,17 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
 
   const randomizeBoard = () => {
     const landTiles = hexTiles.filter(h => h.type !== 'ocean');
-    const shuffledResources = [...resourceTypes.slice(0, -2), ...resourceTypes.slice(0, -2), ...resourceTypes.slice(0, -2), 'desert']
-      .sort(() => Math.random() - 0.5);
+    const resourcePool: ResourceType[] = [
+      'wood', 'wood', 'wood', 'wood',
+      'sheep', 'sheep', 'sheep', 'sheep',
+      'wheat', 'wheat', 'wheat', 'wheat',
+      'brick', 'brick', 'brick',
+      'ore', 'ore', 'ore',
+      'desert'
+    ];
+
+    const shuffledResources = [...resourcePool].sort(() => Math.random() - 0.5);
     const shuffledNumbers = [...numberTokens].sort(() => Math.random() - 0.5);
-    
     let resourceIndex = 0;
     let numberIndex = 0;
     const newHexes = hexTiles.map(hex => {
