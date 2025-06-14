@@ -24,18 +24,32 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   const [notes, setNotes] = useState(initialGame?.notes || '');
   const [tags, setTags] = useState<string[]>(initialGame?.tags || []);
   const [newTag, setNewTag] = useState('');
+  const [gameType, setGameType] = useState<'standard' | 'seafarers' | 'cities' | 'traders' | 'america'>('standard');
   
   const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>(
     initialGame?.players || []
   );
   
   const [boardSetup, setBoardSetup] = useState<BoardSetup>(
-    initialGame?.boardSetup || generateDefaultBoard()
+    initialGame?.boardSetup || generateDefaultBoard(gameType)
   );
 
   const [showBoardEditor, setShowBoardEditor] = useState(false);
   const [showBoardTemplates, setShowBoardTemplates] = useState(false);
   const [boardName, setBoardName] = useState('');
+
+  const gameTypes = [
+    { key: 'standard', name: 'カタンの開拓者たち (スタンダード版)', description: 'カタンシリーズの基本となるゲーム' },
+    { key: 'seafarers', name: '航海者版 (海カタン)', description: '海を舞台にした拡張版で、海賊や交易船が登場' },
+    { key: 'cities', name: '都市と騎士版 (騎士カタン)', description: '騎士や都市が登場し、より戦略的なゲーム' },
+    { key: 'traders', name: '商人と蛮族版 (商人カタン)', description: '商人と蛮族が登場し、交易や交渉が重要' },
+    { key: 'america', name: 'アメリカ大陸版 (アメリカ・カタン)', description: 'アメリカ大陸を舞台にした独立したゲーム' }
+  ];
+
+  const handleGameTypeChange = (newType: typeof gameType) => {
+    setGameType(newType);
+    setBoardSetup(generateDefaultBoard(newType));
+  };
 
   const addPlayer = () => {
     if (gamePlayers.length >= 6) return;
@@ -165,6 +179,7 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
         </div>
         <BoardEditor
           initialBoard={boardSetup}
+          gamePlayers={gamePlayers}
           onSave={(board) => {
             setBoardSetup(board);
             if (boardName.trim()) {
@@ -237,6 +252,33 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
                   required
                 />
+              </div>
+            </div>
+            
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Game Type
+              </label>
+              <div className="space-y-2">
+                {gameTypes.map(type => (
+                  <div key={type.key} className="flex items-start">
+                    <input
+                      type="radio"
+                      id={type.key}
+                      name="gameType"
+                      value={type.key}
+                      checked={gameType === type.key}
+                      onChange={(e) => handleGameTypeChange(e.target.value as typeof gameType)}
+                      className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                    />
+                    <div className="ml-3">
+                      <label htmlFor={type.key} className="text-sm font-medium text-gray-900 cursor-pointer">
+                        {type.name}
+                      </label>
+                      <p className="text-xs text-gray-500">{type.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </CardContent>
@@ -423,29 +465,49 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   );
 };
 
-// Simplified board generation for the MVP
-export const generateDefaultBoard = (): BoardSetup => {
+// Board generation functions for different game types
+export const generateDefaultBoard = (gameType: 'standard' | 'seafarers' | 'cities' | 'traders' | 'america' = 'standard'): BoardSetup => {
   const hexes: HexTile[] = [];
-  const layout = [4, 5, 6, 7, 6, 5, 4];
-  const resources= ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
+  
+  let layout: number[];
+  let oceanIndices: Set<number>;
+  
+  switch (gameType) {
+    case 'seafarers':
+      layout = [5, 6, 7, 8, 9, 8, 7, 6, 5];
+      oceanIndices = new Set([0,1,2,3,4,5,11,12,18,19,26,27,34,35,41,42,43,44,45,46,47]);
+      break;
+    case 'cities':
+      layout = [4, 5, 6, 7, 6, 5, 4];
+      oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
+      break;
+    case 'traders':
+      layout = [4, 5, 6, 7, 6, 5, 4];
+      oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
+      break;
+    case 'america':
+      layout = [3, 4, 5, 6, 5, 4, 3];
+      oceanIndices = new Set([0,1,2,3,7,8,12,13,18,19,23,24,25,26,27]);
+      break;
+    default: // standard
+      layout = [4, 5, 6, 7, 6, 5, 4];
+      oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
+  }
 
-  // 「海」にするインデックスリスト
-  const oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
-
+  const resources = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
   let hexId = 0;
+  
   layout.forEach((rowSize, rowIndex) => {
     const xOffset = (layout.length - rowSize) / 2;
     for (let x = 0; x < rowSize; x++, hexId++) {
-      // oceanIndices に該当すれば ocean、一番目が砂漠（インデックス9）のみ desert
       const type: ResourceType =
         oceanIndices.has(hexId) ? 'ocean'
-        : hexId === 9                ? 'desert'
+        : hexId === Math.floor(layout.reduce((a, b) => a + b, 0) / 2) ? 'desert'
         : resources[hexId % resources.length];
 
       hexes.push({
         id: `hex-${hexId}`,
         type,
-        // ocean と desert 以外は数字トークンを割り当て
         number: !['ocean','desert'].includes(type)
           ? [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12][hexId % 18]
           : undefined,
@@ -458,7 +520,7 @@ export const generateDefaultBoard = (): BoardSetup => {
     hexTiles: hexes,
     numberTokens: [],
     harbors: [],
-    robberPosition: { x: 2, y: 2 },
+    robberPosition: { x: Math.floor(layout[Math.floor(layout.length/2)] / 2), y: Math.floor(layout.length / 2) },
     buildings: [],
     roads: []
   };
@@ -466,3 +528,4 @@ export const generateDefaultBoard = (): BoardSetup => {
 
 // Import HexBoard component
 import { HexBoard } from './HexBoard';
+import { HexTile, ResourceType } from '../../models/types';

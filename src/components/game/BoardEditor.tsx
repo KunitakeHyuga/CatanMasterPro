@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { HexTile, ResourceType, Harbor, HarborType, BoardSetup } from '../../models/types';
+import { HexTile, ResourceType, Harbor, HarborType, BoardSetup, GamePlayer, Building, Road, Vertex, Edge } from '../../models/types';
 import { HexBoard } from './HexBoard';
-import { Shuffle, RotateCcw, Save, Download, Upload } from 'lucide-react';
+import { Shuffle, RotateCcw, Save, Download, Upload, Home, Route } from 'lucide-react';
+import { generateDefaultBoard } from './GameForm';
 
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
 const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'ocean', 'any'];
@@ -11,28 +12,38 @@ const numberTokens = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12]
 
 interface BoardEditorProps {
   initialBoard?: BoardSetup;
+  gamePlayers?: GamePlayer[];
   onSave: (board: BoardSetup) => void;
   onCancel: () => void;
 }
 
 export const BoardEditor: React.FC<BoardEditorProps> = ({
   initialBoard,
+  gamePlayers = [],
   onSave,
   onCancel
 }) => {
   const [hexTiles, setHexTiles] = useState<HexTile[]>(
-    initialBoard?.hexTiles || generateStandardBoard()
+    initialBoard?.hexTiles || generateDefaultBoard().hexTiles
   );
   const [harbors, setHarbors] = useState<Harbor[]>(
-    initialBoard?.harbors || generateStandardHarbors()
+    initialBoard?.harbors || []
+  );
+  const [buildings, setBuildings] = useState<Building[]>(
+    initialBoard?.buildings || []
+  );
+  const [roads, setRoads] = useState<Road[]>(
+    initialBoard?.roads || []
   );
   const [robberPosition, setRobberPosition] = useState(
     initialBoard?.robberPosition || { x: 2, y: 2 }
   );
-  const [selectedTool, setSelectedTool] = useState<'resource' | 'number' | 'harbor' | 'robber'>('resource');
+  const [selectedTool, setSelectedTool] = useState<'resource' | 'number' | 'harbor' | 'robber' | 'building' | 'road'>('resource');
   const [selectedResource, setSelectedResource] = useState<ResourceType>('wood');
   const [selectedNumber, setSelectedNumber] = useState<number>(6);
   const [selectedHarbor, setSelectedHarbor] = useState<HarborType>('any');
+  const [selectedPlayer, setSelectedPlayer] = useState<string>(gamePlayers[0]?.id || '');
+  const [selectedBuildingType, setSelectedBuildingType] = useState<'settlement' | 'city'>('settlement');
 
   const handleHexClick = useCallback((hex: HexTile) => {
     if (selectedTool === 'resource') {
@@ -41,35 +52,90 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
           ? { ...h, type: selectedResource, number: selectedResource === 'desert' ? undefined : h.number }
           : h
       ));
-    } else if (selectedTool === 'number' && hex.type !== 'desert') {
+    } else if (selectedTool === 'number' && hex.type !== 'desert' && hex.type !== 'ocean') {
       setHexTiles(prev => prev.map(h => 
         h.id === hex.id ? { ...h, number: selectedNumber } : h
       ));
-    } else if (selectedTool === 'robber') {
+    } else if (selectedTool === 'robber' && hex.type !== 'ocean') {
       setRobberPosition({ x: hex.position.x, y: hex.position.y });
     }
   }, [selectedTool, selectedResource, selectedNumber]);
 
+  const handleVertexClick = useCallback((vertex: Vertex) => {
+    if (selectedTool === 'building' && selectedPlayer) {
+      const existingBuilding = buildings.find(b => 
+        Math.abs(b.position.x - vertex.x) < 5 && Math.abs(b.position.y - vertex.y) < 5
+      );
+      
+      if (existingBuilding) {
+        // Remove existing building
+        setBuildings(prev => prev.filter(b => b !== existingBuilding));
+      } else {
+        // Add new building
+        const newBuilding: Building = {
+          type: selectedBuildingType,
+          position: vertex,
+          playerId: selectedPlayer
+        };
+        setBuildings(prev => [...prev, newBuilding]);
+      }
+    }
+  }, [selectedTool, selectedPlayer, selectedBuildingType, buildings]);
+
+  const handleEdgeClick = useCallback((edge: Edge) => {
+    if (selectedTool === 'road' && selectedPlayer) {
+      const existingRoad = roads.find(r => 
+        (Math.abs(r.position.from.x - edge.from.x) < 5 && Math.abs(r.position.from.y - edge.from.y) < 5 &&
+         Math.abs(r.position.to.x - edge.to.x) < 5 && Math.abs(r.position.to.y - edge.to.y) < 5) ||
+        (Math.abs(r.position.from.x - edge.to.x) < 5 && Math.abs(r.position.from.y - edge.to.y) < 5 &&
+         Math.abs(r.position.to.x - edge.from.x) < 5 && Math.abs(r.position.to.y - edge.from.y) < 5)
+      );
+      
+      if (existingRoad) {
+        // Remove existing road
+        setRoads(prev => prev.filter(r => r !== existingRoad));
+      } else {
+        // Add new road
+        const newRoad: Road = {
+          position: edge,
+          playerId: selectedPlayer
+        };
+        setRoads(prev => [...prev, newRoad]);
+      }
+    }
+  }, [selectedTool, selectedPlayer, roads]);
+
   const randomizeBoard = () => {
-    const shuffledResources = [...resourceTypes.slice(0, -1), ...resourceTypes.slice(0, -1), ...resourceTypes.slice(0, -1), 'desert']
+    const landTiles = hexTiles.filter(h => h.type !== 'ocean');
+    const shuffledResources = [...resourceTypes.slice(0, -2), ...resourceTypes.slice(0, -2), ...resourceTypes.slice(0, -2), 'desert']
       .sort(() => Math.random() - 0.5);
     const shuffledNumbers = [...numberTokens].sort(() => Math.random() - 0.5);
     
+    let resourceIndex = 0;
     let numberIndex = 0;
-    const newHexes = hexTiles.map((hex, index) => ({
-      ...hex,
-      type: shuffledResources[index] as ResourceType,
-      number: shuffledResources[index] === 'desert' ? undefined : shuffledNumbers[numberIndex++]
-    }));
+    const newHexes = hexTiles.map(hex => {
+      if (hex.type === 'ocean') {
+        return hex; // Keep ocean tiles as they are
+      }
+      
+      const newType = shuffledResources[resourceIndex++] as ResourceType;
+      return {
+        ...hex,
+        type: newType,
+        number: newType === 'desert' ? undefined : shuffledNumbers[numberIndex++]
+      };
+    });
     
     setHexTiles(newHexes);
-    setHarbors(generateStandardHarbors());
   };
 
   const resetBoard = () => {
-    setHexTiles(generateStandardBoard());
-    setHarbors(generateStandardHarbors());
-    setRobberPosition({ x: 2, y: 2 });
+    const defaultBoard = generateDefaultBoard();
+    setHexTiles(defaultBoard.hexTiles);
+    setHarbors(defaultBoard.harbors);
+    setBuildings([]);
+    setRoads([]);
+    setRobberPosition(defaultBoard.robberPosition);
   };
 
   const exportBoard = () => {
@@ -77,9 +143,9 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
       hexTiles,
       harbors,
       robberPosition,
-      numberTokens: [],
-      buildings: [],
-      roads: []
+      buildings,
+      roads,
+      numberTokens: []
     };
     
     const dataStr = JSON.stringify(boardData, null, 2);
@@ -102,6 +168,8 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         const boardData = JSON.parse(e.target?.result as string);
         if (boardData.hexTiles) setHexTiles(boardData.hexTiles);
         if (boardData.harbors) setHarbors(boardData.harbors);
+        if (boardData.buildings) setBuildings(boardData.buildings);
+        if (boardData.roads) setRoads(boardData.roads);
         if (boardData.robberPosition) setRobberPosition(boardData.robberPosition);
       } catch (error) {
         alert('Invalid board file format');
@@ -115,12 +183,18 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
       hexTiles,
       harbors,
       robberPosition,
-      numberTokens: [],
-      buildings: [],
-      roads: []
+      buildings,
+      roads,
+      numberTokens: []
     };
     onSave(board);
   };
+
+  // Create player colors mapping
+  const playerColors = gamePlayers.reduce((acc, player) => {
+    acc[player.id] = player.color;
+    return acc;
+  }, {} as Record<string, string>);
 
   return (
     <div className="space-y-6">
@@ -141,13 +215,16 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
                   { key: 'resource', label: 'リソース' },
                   { key: 'number', label: '数字' },
                   { key: 'harbor', label: '港' },
-                  { key: 'robber', label: '盗賊' }
+                  { key: 'robber', label: '盗賊' },
+                  { key: 'building', label: '建物', icon: <Home size={16} /> },
+                  { key: 'road', label: '道路', icon: <Route size={16} /> }
                 ].map(tool => (
                   <Button
                     key={tool.key}
                     variant={selectedTool === tool.key ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => setSelectedTool(tool.key as any)}
+                    icon={tool.icon}
                   >
                     {tool.label}
                   </Button>
@@ -227,6 +304,56 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
               </div>
             )}
 
+            {/* 建物・道路用プレイヤー選択 */}
+            {(selectedTool === 'building' || selectedTool === 'road') && gamePlayers.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  プレイヤーを選択
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {gamePlayers.map(player => (
+                    <Button
+                      key={player.id}
+                      variant={selectedPlayer === player.id ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedPlayer(player.id)}
+                    >
+                      <div 
+                        className="w-3 h-3 rounded-full mr-2" 
+                        style={{ backgroundColor: player.color }}
+                      />
+                      {player.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 建物タイプ選択 */}
+            {selectedTool === 'building' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  建物タイプ
+                </label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedBuildingType === 'settlement' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedBuildingType('settlement')}
+                  >
+                    開拓地
+                  </Button>
+                  <Button
+                    variant={selectedBuildingType === 'city' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedBuildingType('city')}
+                  >
+                    都市
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* アクションボタン */}
             <div className="flex flex-wrap gap-2 pt-4 border-t">
               <Button
@@ -283,8 +410,13 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
           <HexBoard
             hexes={hexTiles}
             harbors={harbors}
+            buildings={buildings}
+            roads={roads}
             robberPosition={robberPosition}
+            playerColors={playerColors}
             onHexClick={handleHexClick}
+            onVertexClick={handleVertexClick}
+            onEdgeClick={handleEdgeClick}
             isInteractive={true}
             size={60}
           />
@@ -303,66 +435,3 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
     </div>
   );
 };
-
-// ヘルパー関数
-function generateStandardBoard(): HexTile[] {
-  const hexes: HexTile[] = [];
-  
-  // カタンボードの標準配置（19個のタイル）
-  const boardLayout = [
-    // 行0: 3個
-    { x: 0, y: 0, resource: 'ore', number: 10 },
-    { x: 1, y: 0, resource: 'sheep', number: 2 },
-    { x: 2, y: 0, resource: 'wood', number: 9 },
-    
-    // 行1: 4個
-    { x: 0, y: 1, resource: 'wheat', number: 12 },
-    { x: 1, y: 1, resource: 'brick', number: 6 },
-    { x: 2, y: 1, resource: 'sheep', number: 4 },
-    { x: 3, y: 1, resource: 'brick', number: 10 },
-    
-    // 行2: 5個（中央行）
-    { x: 0, y: 2, resource: 'wheat', number: 9 },
-    { x: 1, y: 2, resource: 'wood', number: 11 },
-    { x: 2, y: 2, resource: 'desert', number: undefined },
-    { x: 3, y: 2, resource: 'wood', number: 3 },
-    { x: 4, y: 2, resource: 'ore', number: 8 },
-    
-    // 行3: 4個
-    { x: 0, y: 3, resource: 'wood', number: 8 },
-    { x: 1, y: 3, resource: 'ore', number: 3 },
-    { x: 2, y: 3, resource: 'wheat', number: 4 },
-    { x: 3, y: 3, resource: 'sheep', number: 5 },
-    
-    // 行4: 3個
-    { x: 1, y: 4, resource: 'brick', number: 5 },
-    { x: 2, y: 4, resource: 'wheat', number: 6 },
-    { x: 3, y: 4, resource: 'sheep', number: 11 }
-  ];
-  
-  boardLayout.forEach((tile, index) => {
-    hexes.push({
-      id: `hex-${index}`,
-      type: tile.resource as ResourceType,
-      number: tile.number,
-      position: { x: tile.x, y: tile.y }
-    });
-  });
-  
-  return hexes;
-}
-
-function generateStandardHarbors(): Harbor[] {
-  return [
-    // 港の配置（海タイルの位置に対応）
-    { type: 'any', position: { x: -1, y: -1 } },
-    { type: 'wood', position: { x: 1, y: -2 } },
-    { type: 'any', position: { x: 3, y: -1 } },
-    { type: 'brick', position: { x: 4, y: 1 } },
-    { type: 'any', position: { x: 4, y: 2 } },
-    { type: 'wheat', position: { x: 3, y: 3 } },
-    { type: 'any', position: { x: 1, y: 4 } },
-    { type: 'ore', position: { x: -1, y: 3 } },
-    { type: 'sheep', position: { x: -2, y: 1 } }
-  ];
-}
