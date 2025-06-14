@@ -494,7 +494,7 @@ export const generateDefaultBoard = (gameType: 'standard' | 'seafarers' | 'citie
       oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
   }
 
-  const resources = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
+  const resources = ['wood', 'brick', 'sheep', 'wheat', 'ore'];
   let hexId = 0;
   
   layout.forEach((rowSize, rowIndex) => {
