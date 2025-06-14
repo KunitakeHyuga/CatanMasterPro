@@ -1,6 +1,6 @@
 // Core data models for the Catan Master Pro application
 
-export type ResourceType = 'wood' | 'brick' | 'sheep' | 'wheat' | 'ore' | 'desert';
+export type ResourceType = 'wood' | 'brick' | 'sheep' | 'wheat' | 'ore' | 'desert' | 'ocean';
 export type HarborType = ResourceType | 'any' | 'none';
 export type PlayerColor = 'red' | 'blue' | 'white' | 'orange' | 'green' | 'brown';
 

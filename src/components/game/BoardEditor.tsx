@@ -5,8 +5,8 @@ import { HexTile, ResourceType, Harbor, HarborType, BoardSetup } from '../../mod
 import { HexBoard } from './HexBoard';
 import { Shuffle, RotateCcw, Save, Download, Upload } from 'lucide-react';
 
-const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert'];
-const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'any'];
+const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
+const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'ocean', 'any'];
 const numberTokens = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12];
 
 interface BoardEditorProps {
@@ -174,7 +174,9 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
                        resource === 'brick' ? '丘陵' :
                        resource === 'sheep' ? '牧草地' :
                        resource === 'wheat' ? '農地' :
-                       resource === 'ore' ? '山地' : '砂漠'}
+                       resource === 'ore' ? '山地' :
+                       resource === 'ocean' ? '海' :
+                       '砂漠'}
                     </Button>
                   ))}
                 </div>
