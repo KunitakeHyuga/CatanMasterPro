@@ -424,33 +424,36 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
 };
 
 // Simplified board generation for the MVP
-const generateDefaultBoard = () => {
-  const hexes = [];
-  const layout = [3, 4, 5, 4, 3];
-  const resources = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert'];
-  
+export const generateDefaultBoard = (): BoardSetup => {
+  const hexes: HexTile[] = [];
+  const layout = [4, 5, 6, 7, 6, 5, 4];
+  const resources= ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
+
+  // 「海」にするインデックスリスト
+  const oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
+
   let hexId = 0;
   layout.forEach((rowSize, rowIndex) => {
-    const xOffset = (5 - rowSize) / 2;
-    
-    for (let x = 0; x < rowSize; x++) {
-      const resourceIndex = hexId % (resources.length - 1);
-      const resourceType = hexId === 9 ? 'desert' : resources[resourceIndex];
-      
+    const xOffset = (layout.length - rowSize) / 2;
+    for (let x = 0; x < rowSize; x++, hexId++) {
+      // oceanIndices に該当すれば ocean、一番目が砂漠（インデックス9）のみ desert
+      const type: ResourceType =
+        oceanIndices.has(hexId) ? 'ocean'
+        : hexId === 9                ? 'desert'
+        : resources[hexId % resources.length];
+
       hexes.push({
         id: `hex-${hexId}`,
-        type: resourceType,
-        number: resourceType !== 'desert' ? [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12][hexId % 18] : undefined,
-        position: {
-          x: x + xOffset,
-          y: rowIndex
-        }
+        type,
+        // ocean と desert 以外は数字トークンを割り当て
+        number: !['ocean','desert'].includes(type)
+          ? [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12][hexId % 18]
+          : undefined,
+        position: { x: x + xOffset, y: rowIndex }
       });
-      
-      hexId++;
     }
   });
-  
+
   return {
     hexTiles: hexes,
     numberTokens: [],
