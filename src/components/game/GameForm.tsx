@@ -16,6 +16,7 @@ import {
 import { DevelopmentCardEditor } from './DevelopmentCardEditor';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
+import { generateDefaultBoard } from '../../utils/board';
 
 const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 'brown'];
 

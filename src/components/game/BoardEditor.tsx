@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { HexTile, ResourceType, Harbor, HarborType, BoardSetup, GamePlayer, Building, Road, Vertex, Edge } from '../../models/types';
 import { HexBoard } from './HexBoard';
 import { Shuffle, RotateCcw, Save, Download, Upload, Home, Route } from 'lucide-react';
-import { generateDefaultBoard } from './GameForm';
+import { generateDefaultBoard } from '../../utils/board';
 
 const computeVertices = (size: number): Vertex[] => {
   const verts: Vertex[] = [];
@@ -46,6 +46,19 @@ const getAdjacentVertices = (
   });
   return adjacent;
 };
+
+// 頂点に隣接するヘクスタイルを取得するためのユーティリティ
+const getAdjacentHexes = (
+  vertex: Vertex,
+  hexes: HexTile[],
+  size: number
+) =>
+  hexes.filter((hex) => {
+    const pos = getHexPosition(hex.position.x, hex.position.y, size);
+    return computeVertices(size).some((v) =>
+      verticesEqual({ x: pos.x + v.x, y: pos.y + v.y }, vertex)
+    );
+  });
 
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
 const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'any'];
@@ -91,24 +104,30 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
   const availableVertices = React.useMemo(() => {
     if (selectedTool !== 'building' || !selectedPlayer) return [] as Vertex[];
     const verts: Vertex[] = [];
-    hexTiles.forEach(hex => {
+    hexTiles.forEach((hex) => {
       const pos = getHexPosition(hex.position.x, hex.position.y, 60);
-      computeVertices(60).forEach(v => {
+      computeVertices(60).forEach((v) => {
         const globalV = { x: pos.x + v.x, y: pos.y + v.y };
-        if (!verts.some(existing => verticesEqual(existing, globalV))) {
+        if (!verts.some((existing) => verticesEqual(existing, globalV))) {
           verts.push(globalV);
         }
       });
     });
-    return verts.filter(v => {
-      const hasBuilding = buildings.some(b => verticesEqual(b.position, v));
+    const buildingCount = buildings.filter((b) => b.playerId === selectedPlayer).length;
+    return verts.filter((v) => {
+      const hasBuilding = buildings.some((b) => verticesEqual(b.position, v));
       if (hasBuilding) return false;
+      const adjHexes = getAdjacentHexes(v, hexTiles, 60);
+      // 陸タイルが隣接していない頂点では建物を置けない
+      if (!adjHexes.some((h) => h.type !== 'ocean')) return false;
       const adjacent = getAdjacentVertices(v, hexTiles, 60);
-      const blocked = buildings.some(b => adjacent.some(a => verticesEqual(b.position, a)));
+      const blocked = buildings.some((b) => adjacent.some((a) => verticesEqual(b.position, a)));
       if (blocked) return false;
-      const hasRoad = roads.some(r =>
-        r.playerId === selectedPlayer &&
-        (verticesEqual(r.position.from, v) || verticesEqual(r.position.to, v))
+      if (buildingCount < 2) return true;
+      const hasRoad = roads.some(
+        (r) =>
+          r.playerId === selectedPlayer &&
+          (verticesEqual(r.position.from, v) || verticesEqual(r.position.to, v))
       );
       return hasRoad;
     });
@@ -116,37 +135,45 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
 
   const availableEdges = React.useMemo(() => {
     if (selectedTool !== 'road' || !selectedPlayer) return [] as Edge[];
+    const buildingCount = buildings.filter((b) => b.playerId === selectedPlayer).length;
+    if (buildingCount === 0) return [] as Edge[];
     const edges: Edge[] = [];
-    hexTiles.forEach(hex => {
+    hexTiles.forEach((hex) => {
       const pos = getHexPosition(hex.position.x, hex.position.y, 60);
-      const verts = computeVertices(60).map(v => ({ x: pos.x + v.x, y: pos.y + v.y }));
+      const verts = computeVertices(60).map((v) => ({ x: pos.x + v.x, y: pos.y + v.y }));
       verts.forEach((v, i) => {
         const from = v;
         const to = verts[(i + 1) % 6];
-        if (!edges.some(e =>
-          (verticesEqual(e.from, from) && verticesEqual(e.to, to)) ||
-          (verticesEqual(e.from, to) && verticesEqual(e.to, from))
-        )) {
+        if (
+          !edges.some(
+            (e) =>
+              (verticesEqual(e.from, from) && verticesEqual(e.to, to)) ||
+              (verticesEqual(e.from, to) && verticesEqual(e.to, from))
+          )
+        ) {
           edges.push({ from, to });
         }
       });
     });
-    return edges.filter(e => {
-      const exists = roads.some(r =>
-        (verticesEqual(r.position.from, e.from) && verticesEqual(r.position.to, e.to)) ||
-        (verticesEqual(r.position.from, e.to) && verticesEqual(r.position.to, e.from))
+    return edges.filter((e) => {
+      const exists = roads.some(
+        (r) =>
+          (verticesEqual(r.position.from, e.from) && verticesEqual(r.position.to, e.to)) ||
+          (verticesEqual(r.position.from, e.to) && verticesEqual(r.position.to, e.from))
       );
       if (exists) return false;
-      const connectedBuilding = buildings.some(b =>
-        b.playerId === selectedPlayer &&
-        (verticesEqual(b.position, e.from) || verticesEqual(b.position, e.to))
+      const connectedBuilding = buildings.some(
+        (b) =>
+          b.playerId === selectedPlayer &&
+          (verticesEqual(b.position, e.from) || verticesEqual(b.position, e.to))
       );
-      const connectedRoad = roads.some(r =>
-        r.playerId === selectedPlayer &&
-        (verticesEqual(r.position.from, e.from) ||
-         verticesEqual(r.position.to, e.from) ||
-         verticesEqual(r.position.from, e.to) ||
-         verticesEqual(r.position.to, e.to))
+      const connectedRoad = roads.some(
+        (r) =>
+          r.playerId === selectedPlayer &&
+          (verticesEqual(r.position.from, e.from) ||
+            verticesEqual(r.position.to, e.from) ||
+            verticesEqual(r.position.from, e.to) ||
+            verticesEqual(r.position.to, e.to))
       );
       return connectedBuilding || connectedRoad;
     });
@@ -179,19 +206,22 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
           // Remove existing building
           setBuildings((prev) => prev.filter((b) => b !== existingBuilding));
         } else {
+          const adjHexes = getAdjacentHexes(vertex, hexTiles, 60);
+          // 陸タイルに面していない場合は設置不可
+          if (!adjHexes.some((h) => h.type !== 'ocean')) return;
           const adjacent = getAdjacentVertices(vertex, hexTiles, 60);
           const blocked = buildings.some((b) =>
             adjacent.some((v) => verticesEqual(b.position, v))
           );
           if (blocked) return;
 
+          const buildingCount = buildings.filter((b) => b.playerId === selectedPlayer).length;
           const hasOwnRoad = roads.some(
             (r) =>
               r.playerId === selectedPlayer &&
-              (verticesEqual(r.position.from, vertex) ||
-                verticesEqual(r.position.to, vertex))
+              (verticesEqual(r.position.from, vertex) || verticesEqual(r.position.to, vertex))
           );
-          if (!hasOwnRoad) return;
+          if (buildingCount >= 2 && !hasOwnRoad) return;
 
           const newBuilding: Building = {
             type: selectedBuildingType,
@@ -208,6 +238,11 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
   const handleEdgeClick = useCallback(
     (edge: Edge) => {
       if (selectedTool === 'road' && selectedPlayer) {
+        const buildingCount = buildings.filter((b) => b.playerId === selectedPlayer).length;
+        if (buildingCount === 0) {
+          alert('先に家を置いてください');
+          return;
+        }
         const existingRoad = roads.find(
           (r) =>
             (verticesEqual(r.position.from, edge.from) &&
