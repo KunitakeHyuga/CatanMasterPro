@@ -12,6 +12,8 @@ interface HexProps {
   onEdgeClick?: (edge: Edge) => void;
   onHexClick?: (hex: HexTile) => void;
   isInteractive?: boolean;
+  highlightVertices?: Vertex[];
+  highlightEdges?: Edge[];
 }
 
 // 六角形の頂点を計算（フラットトップ）
@@ -23,6 +25,9 @@ const computeVertices = (size: number): Vertex[] => {
   }
   return verts;
 };
+
+const verticesEqual = (a: Vertex, b: Vertex, tol = 5) =>
+  Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
 
 const resourceColors: Record<ResourceType, string> = {
   wood: '#10b981', // emerald-500 - 森林
@@ -55,6 +60,8 @@ const Hex: React.FC<HexProps> = ({
   onEdgeClick,
   onHexClick,
   isInteractive = false,
+  highlightVertices = [],
+  highlightEdges = [],
 }) => {
   const vertices = computeVertices(size);
   const edges: Edge[] = vertices.map((v, i) => ({ from: v, to: vertices[(i + 1) % 6] }));
@@ -142,26 +149,33 @@ const Hex: React.FC<HexProps> = ({
       })}
       
       {/* インタラクティブな頂点（建物配置用） */}
-      {isInteractive && vertices.map((v, i) => (
-        <circle 
-          key={i} 
-          cx={v.x} 
-          cy={v.y} 
-          r={8} 
-          fill="transparent" 
-          className="hover:fill-gray-200 opacity-0 hover:opacity-50 cursor-pointer" 
-          onClick={(e) => {
-            e.stopPropagation();
-            onVertexClick?.(v);
-          }} 
-        />
-      ))}
+      {isInteractive && vertices.map((v, i) => {
+        const highlighted = highlightVertices.some(h => verticesEqual(h, v));
+        return (
+          <circle
+            key={i}
+            cx={v.x}
+            cy={v.y}
+            r={8}
+            fill={highlighted ? 'rgba(253, 224, 71, 0.5)' : 'transparent'}
+            className={highlighted ? 'cursor-pointer' : 'hover:fill-gray-200 opacity-0 hover:opacity-50 cursor-pointer'}
+            onClick={(e) => {
+              e.stopPropagation();
+              onVertexClick?.(v);
+            }}
+          />
+        );
+      })}
       
       {/* インタラクティブなエッジ（道路配置用） */}
       {isInteractive && edges.map((edge, i) => {
         const midX = (edge.from.x + edge.to.x) / 2;
         const midY = (edge.from.y + edge.to.y) / 2;
         const angle = (Math.atan2(edge.to.y - edge.from.y, edge.to.x - edge.from.x) * 180) / Math.PI;
+        const highlighted = highlightEdges.some(h =>
+          (verticesEqual(h.from, edge.from) && verticesEqual(h.to, edge.to)) ||
+          (verticesEqual(h.from, edge.to) && verticesEqual(h.to, edge.from))
+        );
         return (
           <rect
             key={i}
@@ -170,8 +184,8 @@ const Hex: React.FC<HexProps> = ({
             width={24}
             height={8}
             transform={`rotate(${angle} ${midX} ${midY})`}
-            fill="transparent"
-            className="hover:fill-gray-200 opacity-0 hover:opacity-50 cursor-pointer"
+            fill={highlighted ? 'rgba(253, 224, 71, 0.5)' : 'transparent'}
+            className={highlighted ? 'cursor-pointer' : 'hover:fill-gray-200 opacity-0 hover:opacity-50 cursor-pointer'}
             onClick={(event) => {
               event.stopPropagation();
               onEdgeClick?.(edge);
@@ -196,6 +210,8 @@ interface HexBoardProps {
   onEdgeClick?: (edge: Edge) => void;
   onHexClick?: (hex: HexTile) => void;
   isInteractive?: boolean;
+  highlightVertices?: Vertex[];
+  highlightEdges?: Edge[];
 }
 
 export const HexBoard: React.FC<HexBoardProps> = ({
@@ -211,6 +227,8 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   onEdgeClick,
   onHexClick,
   isInteractive = false,
+  highlightVertices = [],
+  highlightEdges = [],
 }) => {
   const getHexPosition = React.useCallback((col: number, row: number) => ({
     x: col * (size * Math.sqrt(3)),
@@ -281,6 +299,38 @@ export const HexBoard: React.FC<HexBoardProps> = ({
                 to: { x: r.position.to.x - x, y: r.position.to.y - y },
               },
             }));
+
+          const hexHighlightVertices = highlightVertices
+            .filter(v => {
+              const hexVertices = computeVertices(size);
+              return hexVertices.some(hv =>
+                Math.abs(v.x - (x + hv.x)) < 10 && Math.abs(v.y - (y + hv.y)) < 10
+              );
+            })
+            .map(v => ({ x: v.x - x, y: v.y - y }));
+
+          const hexHighlightEdges = highlightEdges
+            .filter(e => {
+              const hexVertices = computeVertices(size);
+              const hexEdges = hexVertices.map((v, i) => ({
+                from: { x: x + v.x, y: y + v.y },
+                to: { x: x + hexVertices[(i + 1) % 6].x, y: y + hexVertices[(i + 1) % 6].y },
+              }));
+              return hexEdges.some(edge =>
+                (Math.abs(e.from.x - edge.from.x) < 10 &&
+                  Math.abs(e.from.y - edge.from.y) < 10 &&
+                  Math.abs(e.to.x - edge.to.x) < 10 &&
+                  Math.abs(e.to.y - edge.to.y) < 10) ||
+                (Math.abs(e.from.x - edge.to.x) < 10 &&
+                  Math.abs(e.from.y - edge.to.y) < 10 &&
+                  Math.abs(e.to.x - edge.from.x) < 10 &&
+                  Math.abs(e.to.y - edge.from.y) < 10)
+              );
+            })
+            .map(e => ({
+              from: { x: e.from.x - x, y: e.from.y - y },
+              to: { x: e.to.x - x, y: e.to.y - y },
+            }));
           
           return (
             <g key={hex.id} transform={`translate(${x},${y})`}>
@@ -292,14 +342,16 @@ export const HexBoard: React.FC<HexBoardProps> = ({
                 playerColors={playerColors}
                 robberPosition={robberPosition}
                 onVertexClick={onVertexClick ? (vertex) => onVertexClick({ x: x + vertex.x, y: y + vertex.y }) : undefined}
-                onEdgeClick={onEdgeClick ? (edge) => onEdgeClick({
+              onEdgeClick={onEdgeClick ? (edge) => onEdgeClick({
                   from: { x: x + edge.from.x, y: y + edge.from.y },
                   to: { x: x + edge.to.x, y: y + edge.to.y }
                 }) : undefined}
-                onHexClick={onHexClick}
-                isInteractive={isInteractive}
-              />
-            </g>
+              onHexClick={onHexClick}
+              isInteractive={isInteractive}
+              highlightVertices={hexHighlightVertices}
+              highlightEdges={hexHighlightEdges}
+            />
+          </g>
           );
         })}
         {harbors.map((harbor, i) => {
