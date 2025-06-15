@@ -292,9 +292,9 @@ export const HexBoard: React.FC<HexBoardProps> = ({
                 playerColors={playerColors}
                 robberPosition={robberPosition}
                 onVertexClick={onVertexClick ? (vertex) => onVertexClick({ x: x + vertex.x, y: y + vertex.y }) : undefined}
-                onEdgeClick={onEdgeClick ? (edge) => onEdgeClick({ 
-                  from: { x: x + edge.from.x, y: y + edge.from.y }, 
-                  to: { x: x + edge.to.x, y: y + edge.to.y } 
+                onEdgeClick={onEdgeClick ? (edge) => onEdgeClick({
+                  from: { x: x + edge.from.x, y: y + edge.from.y },
+                  to: { x: x + edge.to.x, y: y + edge.to.y }
                 }) : undefined}
                 onHexClick={onHexClick}
                 isInteractive={isInteractive}
@@ -302,6 +302,14 @@ export const HexBoard: React.FC<HexBoardProps> = ({
             </g>
           );
         })}
+        {harbors.map((harbor, i) => (
+          <g key={`harbor-${i}`} transform={`translate(${harbor.position.x},${harbor.position.y})`}>
+            <circle r={10} fill="#fff" stroke="#000" strokeWidth={2} />
+            <text textAnchor="middle" dy={4} className="text-xs">
+              {harbor.type === 'any' ? '3:1' : `2:1 ${harbor.type}`}
+            </text>
+          </g>
+        ))}
       </svg>
     </div>
   );

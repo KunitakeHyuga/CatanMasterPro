@@ -84,7 +84,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
 
   const handleEdgeClick = useCallback((edge: Edge) => {
     if (selectedTool === 'road' && selectedPlayer) {
-      const existingRoad = roads.find(r => 
+      const existingRoad = roads.find(r =>
         (Math.abs(r.position.from.x - edge.from.x) < 5 && Math.abs(r.position.from.y - edge.from.y) < 5 &&
          Math.abs(r.position.to.x - edge.to.x) < 5 && Math.abs(r.position.to.y - edge.to.y) < 5) ||
         (Math.abs(r.position.from.x - edge.to.x) < 5 && Math.abs(r.position.from.y - edge.to.y) < 5 &&
@@ -103,7 +103,29 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         setRoads(prev => [...prev, newRoad]);
       }
     }
-  }, [selectedTool, selectedPlayer, roads]);
+    if (selectedTool === 'harbor') {
+      const midPoint = {
+        x: (edge.from.x + edge.to.x) / 2,
+        y: (edge.from.y + edge.to.y) / 2
+      };
+      const existingIndex = harbors.findIndex(h =>
+        Math.abs(h.position.x - midPoint.x) < 5 &&
+        Math.abs(h.position.y - midPoint.y) < 5
+      );
+
+      if (existingIndex !== -1) {
+        setHarbors(prev => prev.filter((_, i) => i !== existingIndex));
+      } else {
+        setHarbors(prev => [
+          ...prev,
+          {
+            type: selectedHarbor,
+            position: midPoint
+          }
+        ]);
+      }
+    }
+  }, [selectedTool, selectedPlayer, roads, harbors, selectedHarbor]);
 
   const randomizeBoard = () => {
     const landTiles = hexTiles.filter(h => h.type !== 'ocean');
