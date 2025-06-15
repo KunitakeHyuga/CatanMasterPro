@@ -349,10 +349,25 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
     setRobberPosition(defaultBoard.robberPosition);
   };
 
+  // text 要素の computed style を inline 化することで
+  // SVG を画像変換しても文字サイズが変わらないようにする
+  const inlineTextStyles = (svg: SVGSVGElement) => {
+    const texts = svg.querySelectorAll('text');
+    texts.forEach((t) => {
+      const style = window.getComputedStyle(t);
+      t.setAttribute('font-size', style.fontSize);
+      t.setAttribute('font-family', style.fontFamily);
+      t.setAttribute('font-weight', style.fontWeight);
+    });
+  };
+
   const exportBoard = () => {
     // svg を画像化してダウンロードする
     const svgEl = svgRef.current;
     if (!svgEl) return;
+
+    // Tailwind のクラスによる文字サイズを保持するため事前に inline 化
+    inlineTextStyles(svgEl);
 
     const serializer = new XMLSerializer();
     const svgStr = serializer.serializeToString(svgEl);
