@@ -157,7 +157,8 @@ const Hex: React.FC<HexProps> = ({
             cx={v.x}
             cy={v.y}
             r={8}
-            fill={highlighted ? 'rgba(253, 224, 71, 0.5)' : 'transparent'}
+            // ハイライトはユーザー要望により半透明の白で表示
+            fill={highlighted ? 'rgba(255, 255, 255, 0.5)' : 'transparent'}
             className={highlighted ? 'cursor-pointer' : 'hover:fill-gray-200 opacity-0 hover:opacity-50 cursor-pointer'}
             onClick={(e) => {
               e.stopPropagation();
@@ -184,7 +185,8 @@ const Hex: React.FC<HexProps> = ({
             width={24}
             height={8}
             transform={`rotate(${angle} ${midX} ${midY})`}
-            fill={highlighted ? 'rgba(253, 224, 71, 0.5)' : 'transparent'}
+            // 道路候補も同様に白でハイライト
+            fill={highlighted ? 'rgba(255, 255, 255, 0.5)' : 'transparent'}
             className={highlighted ? 'cursor-pointer' : 'hover:fill-gray-200 opacity-0 hover:opacity-50 cursor-pointer'}
             onClick={(event) => {
               event.stopPropagation();
