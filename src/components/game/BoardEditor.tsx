@@ -149,10 +149,17 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
       const landHex = matchingHexes.find(h => h.type !== 'ocean');
       if (!oceanHex || !landHex) return;
 
+      const oceanCenter = getHexPosition(oceanHex.position.x, oceanHex.position.y, size);
       const midPoint = {
         x: (edge.from.x + edge.to.x) / 2,
         y: (edge.from.y + edge.to.y) / 2,
       };
+
+      const edgeVec = { x: edge.to.x - edge.from.x, y: edge.to.y - edge.from.y };
+      const rightNormal = { x: -edgeVec.y, y: edgeVec.x };
+      const toOcean = { x: oceanCenter.x - midPoint.x, y: oceanCenter.y - midPoint.y };
+      const dot = rightNormal.x * toOcean.x + rightNormal.y * toOcean.y;
+      const oceanSide: 'left' | 'right' = dot > 0 ? 'right' : 'left';
 
       const existingIndex = harbors.findIndex(h =>
         Math.abs(h.position.x - midPoint.x) < tolerance &&
@@ -168,6 +175,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
             type: selectedHarbor,
             position: midPoint,
             edge,
+            oceanSide,
           },
         ]);
       }

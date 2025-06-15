@@ -309,8 +309,9 @@ export const HexBoard: React.FC<HexBoardProps> = ({
           const dy = harbor.edge.to.y - harbor.edge.from.y;
           const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
           const length = Math.sqrt(dx * dx + dy * dy);
-          const offsetX = -(dy / length) * 15;
-          const offsetY = (dx / length) * 15;
+          const sideSign = harbor.oceanSide === 'right' ? 1 : -1;
+          const offsetX = sideSign * -(dy / length) * 15;
+          const offsetY = sideSign * (dx / length) * 15;
 
           const fill = harbor.type === 'any' ? '#ffffff' : resourceColors[harbor.type as ResourceType];
           const textColor = harbor.type === 'any' ? '#000000' : '#ffffff';

@@ -72,6 +72,11 @@ export interface Harbor {
     y: number;
   };
   edge: Edge;
+  /**
+   * Side of the edge where the ocean hex lies relative to the edge orientation
+   * ("right" means the ocean is to the right when moving from edge.from to edge.to)
+   */
+  oceanSide: 'left' | 'right';
 }
 
 export interface NumberToken {
