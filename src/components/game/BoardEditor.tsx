@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { HexTile, ResourceType, Harbor, HarborType, BoardSetup, GamePlayer, Building, Road, Vertex, Edge } from '../../models/types';
@@ -64,6 +64,8 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
   onSave,
   onCancel
 }) => {
+  // HexBoard の svg 要素を参照するための ref
+  const svgRef = useRef<SVGSVGElement>(null);
   const [hexTiles, setHexTiles] = useState<HexTile[]>(
     initialBoard?.hexTiles || generateDefaultBoard().hexTiles
   );
@@ -347,24 +349,54 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
     setRobberPosition(defaultBoard.robberPosition);
   };
 
+  // text 要素の computed style を inline 化することで
+  // SVG を画像変換しても文字サイズが変わらないようにする
+  const inlineTextStyles = (svg: SVGSVGElement) => {
+    const texts = svg.querySelectorAll('text');
+    texts.forEach((t) => {
+      const style = window.getComputedStyle(t);
+      t.setAttribute('font-size', style.fontSize);
+      t.setAttribute('font-family', style.fontFamily);
+      t.setAttribute('font-weight', style.fontWeight);
+    });
+  };
+
   const exportBoard = () => {
-    const boardData = {
-      hexTiles,
-      harbors,
-      robberPosition,
-      buildings,
-      roads,
-      numberTokens: []
+    // svg を画像化してダウンロードする
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+
+    // Tailwind のクラスによる文字サイズを保持するため事前に inline 化
+    inlineTextStyles(svgEl);
+
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svgEl);
+    const width = svgEl.clientWidth;
+    const height = svgEl.clientHeight;
+
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    img.onload = () => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#ffffff'; // 背景を白にして透過を防ぐ
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'catan-board.jpg';
+        link.click();
+        URL.revokeObjectURL(url);
+      }, 'image/jpeg');
     };
-    
-    const dataStr = JSON.stringify(boardData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'catan-board.json';
-    link.click();
-    URL.revokeObjectURL(url);
+
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgStr)}`;
   };
 
   const importBoard = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -630,6 +662,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
             highlightVertices={availableVertices}
             highlightEdges={availableEdges}
             size={60}
+            ref={svgRef}
           />
         </CardContent>
       </Card>
