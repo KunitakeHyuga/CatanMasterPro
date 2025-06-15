@@ -63,14 +63,6 @@ export const GameDetails: React.FC = () => {
   // HexBoard の参照を保持し画像として保存できるようにする
   const boardRef = useRef<SVGSVGElement>(null);
 
-  // プレイヤー ID から色を引くマップを構築
-  const playerColors = React.useMemo(() => {
-    return game.players.reduce((acc, p) => {
-      acc[p.playerId] = p.color;
-      return acc;
-    }, {} as Record<string, string>);
-  }, [game.players]);
-
   // export 処理で text 要素のスタイルを保持するためのヘルパー
   const inlineTextStyles = (svg: SVGSVGElement) => {
     const texts = svg.querySelectorAll('text');
