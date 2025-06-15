@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import {
   GamePlayer,
@@ -7,16 +6,7 @@ import {
   DevelopmentCardType
 } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
-import {
-  Sword,
-  Trophy,
-  Route,
-  Coins,
-  Building,
-  Plus,
-  Minus
-} from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
+import { Scroll, Sword, Trophy, Route, Coins, Building } from 'lucide-react';
 
 interface DevelopmentCardEditorProps {
   player: GamePlayer;
