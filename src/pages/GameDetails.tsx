@@ -47,6 +47,14 @@ export const GameDetails: React.FC = () => {
       navigate('/games');
     }
   };
+
+  // プレイヤーIDと色の対応表を作成
+  const playerColors = React.useMemo(() => {
+    return game.players.reduce((acc, p) => {
+      acc[p.id] = p.color;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [game.players]);
   
   // Sort players by rank
   const rankedPlayers = [...game.players].sort((a, b) => a.rank - b.rank);
