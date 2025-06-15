@@ -25,48 +25,48 @@ interface GameState {
   diceHistory: DiceRoll[];
   lastRoll: DiceRoll | null;
   
-  // Player management
+  // プレイヤー関連の状態を整理するための区分
   addPlayer: (name: string, color: PlayerColor) => void;
   updatePlayer: (id: string, updates: Partial<Player>) => void;
   removePlayer: (id: string) => void;
   
-  // Game management
+  // ゲームデータを扱う関数群
   addGame: (game: Omit<GameSession, 'id'>) => void;
   updateGame: (id: string, updates: Partial<GameSession>) => void;
   removeGame: (id: string) => void;
   startNewGame: (players: GamePlayer[], boardSetup: BoardSetup) => string;
   endGame: (gameId: string, winnerId: string) => void;
   
-  // Active game management
+  // 進行中ゲームの状態操作用
   setCurrentGame: (gameId: string) => void;
   updateCurrentGame: (updates: Partial<GameSession>) => void;
   nextTurn: () => void;
   
-  // Development cards
+  // 発展カード処理に関する関数
   drawDevelopmentCard: (playerId: string) => DevelopmentCard | null;
   playDevelopmentCard: (playerId: string, cardId: string) => void;
   
-  // Dice rolling
+  // サイコロ結果の管理
   rollDice: () => DiceRoll;
   
-  // Resource management
+  // 資源の増減を反映させる
   updatePlayerResources: (playerId: string, resources: Partial<ResourceCount>) => void;
   
-  // Building management
+  // 建設関連の更新処理
   addBuilding: (playerId: string, type: 'settlement' | 'city', position: any) => void;
   addRoad: (playerId: string, position: any) => void;
   
-  // Auto calculations
+  // 自動計算のトリガー
   calculatePlayerPoints: (playerId: string) => number;
   updateLongestRoad: () => void;
   updateLargestArmy: () => void;
   
-  // Board management
+  // ボード設定の保存用
   saveBoard: (board: BoardSetup & { name: string }) => void;
   updateSavedBoard: (id: string, updates: Partial<SavedBoard>) => void;
   removeSavedBoard: (id: string) => void;
   
-  // Utility functions
+  // 補助的な取得処理
   getPlayerById: (id: string) => Player | undefined;
   getPlayerStats: (id: string) => {
     winRate: number;
@@ -76,7 +76,7 @@ interface GameState {
   };
 }
 
-// Development card templates
+// 発展カードデッキの雛形を作成
 const createVictoryPointCards = (): DevelopmentCard[] => [
   { id: uuidv4(), type: 'victory_point', name: 'University', isPlayed: false, victoryPointValue: 1, victoryPointType: 'university' },
   { id: uuidv4(), type: 'victory_point', name: 'Library', isPlayed: false, victoryPointValue: 1, victoryPointType: 'library' },
@@ -251,7 +251,7 @@ export const useGameStore = create<GameState>()(
         const deck = currentGame.developmentCardDeck;
         const cardTypes: DevelopmentCardType[] = [];
         
-        // Add available card types to pool
+        // 残っているカード種を抽選対象のリストに追加
         for (let i = 0; i < deck.knights; i++) cardTypes.push('knight');
         for (let i = 0; i < deck.roadBuilding; i++) cardTypes.push('road_building');
         for (let i = 0; i < deck.yearOfPlenty; i++) cardTypes.push('year_of_plenty');
@@ -260,7 +260,7 @@ export const useGameStore = create<GameState>()(
 
         if (cardTypes.length === 0) return null;
 
-        // Draw random card
+        // 均等な確率でカードを引くため乱数を利用
         const randomIndex = Math.floor(Math.random() * cardTypes.length);
         const drawnType = cardTypes[randomIndex];
 
@@ -279,7 +279,7 @@ export const useGameStore = create<GameState>()(
           };
         }
 
-        // Update deck and player
+        // 引いた結果を反映させるためデッキとプレイヤー情報を更新
         const updatedDeck = { ...deck };
         if (drawnType === 'knight') updatedDeck.knights--;
         else if (drawnType === 'road_building') updatedDeck.roadBuilding--;
@@ -324,10 +324,10 @@ export const useGameStore = create<GameState>()(
           )
         });
 
-        // Update largest army after playing knight
+        // 騎士カード使用後に最大騎士力を再判定
         get().updateLargestArmy();
         
-        // Recalculate points
+        // 得点が変動したため再計算
         const updatedPoints = get().calculatePlayerPoints(playerId);
         get().updateCurrentGame({
           players: currentGame.players.map(player =>
@@ -347,16 +347,16 @@ export const useGameStore = create<GameState>()(
 
         let points = 0;
         
-        // Buildings
+        // 建物による得点加算
         points += player.buildings.settlements * 1;
         points += player.buildings.cities * 2;
         
-        // Victory point cards
+        // 勝利点カードの得点加算
         points += player.developmentCards
           .filter(card => card.type === 'victory_point')
           .length;
         
-        // Special achievements
+        // 特殊実績ボーナス
         if (player.hasLongestRoad) points += 2;
         if (player.hasLargestArmy) points += 2;
 
@@ -382,13 +382,13 @@ export const useGameStore = create<GameState>()(
       },
 
       updateLongestRoad: () => {
-        // This would implement road length calculation logic
-        // For now, it's a placeholder
+        // 最長道路算出処理を入れる予定
+        // 現状は仮実装
         const { currentGame } = get();
         if (!currentGame) return;
 
-        // TODO: Implement actual longest road calculation
-        // This is a complex algorithm that needs to traverse connected roads
+        // TODO: 実際の最長道路計算を実装する
+        // 道路を連結して探索する複雑な処理が必要
       },
 
       updatePlayerResources: (playerId, resources) => {
@@ -430,7 +430,7 @@ export const useGameStore = create<GameState>()(
           }
         });
 
-        // Recalculate points
+        // 建物追加で得点が変化するため再計算
         const updatedPoints = get().calculatePlayerPoints(playerId);
         get().updateCurrentGame({
           players: currentGame.players.map(player =>
@@ -463,7 +463,7 @@ export const useGameStore = create<GameState>()(
           }
         });
 
-        // Update longest road
+        // 道路追加後に最長道路判定を更新
         get().updateLongestRoad();
       },
 
@@ -504,7 +504,7 @@ export const useGameStore = create<GameState>()(
           games: [...state.games, newGame],
         }));
 
-        // Update player stats
+        // ゲーム追加時に各プレイヤーの統計情報を更新
         const { players } = get();
         game.players.forEach((gamePlayer) => {
           const player = players.find((p) => p.id === gamePlayer.playerId);
@@ -590,7 +590,7 @@ export const useGameStore = create<GameState>()(
         );
         const avgRank = totalRank / gamesPlayed;
 
-        // Placeholder for favorite resource calculation
+        // 好みの資源計算は未実装
         const favoriteResource = null;
 
         return {
@@ -607,7 +607,7 @@ export const useGameStore = create<GameState>()(
   )
 );
 
-// Helper function to get card names
+// カード名を取得するための補助関数
 function getCardName(type: DevelopmentCardType): string {
   switch (type) {
     case 'knight': return 'Knight';
