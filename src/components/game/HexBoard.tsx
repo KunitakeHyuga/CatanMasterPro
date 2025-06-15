@@ -311,14 +311,18 @@ export const HexBoard: React.FC<HexBoardProps> = ({
           const length = Math.sqrt(dx * dx + dy * dy);
           const offsetX = -(dy / length) * 15;
           const offsetY = (dx / length) * 15;
+
+          const fill = harbor.type === 'any' ? '#ffffff' : resourceColors[harbor.type as ResourceType];
+          const textColor = harbor.type === 'any' ? '#000000' : '#ffffff';
+
           return (
             <g
               key={`harbor-${i}`}
               transform={`translate(${midX + offsetX},${midY + offsetY}) rotate(${angle})`}
               pointerEvents="none"
             >
-              <rect x={-length / 2} y={-8} width={length} height={16} fill="#fff" stroke="#000" strokeWidth={2} />
-              <text textAnchor="middle" dy={4} className="text-xs">
+              <rect x={-length / 2} y={-8} width={length} height={16} fill={fill} stroke="#000" strokeWidth={2} />
+              <text textAnchor="middle" dy={4} className="text-xs" fill={textColor}>
                 {harbor.type === 'any' ? '3:1' : `2:1 ${harbor.type}`}
               </text>
             </g>
