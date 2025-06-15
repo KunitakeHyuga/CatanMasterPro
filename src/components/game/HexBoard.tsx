@@ -292,13 +292,40 @@ export const HexBoard: React.FC<HexBoardProps> = ({
                 playerColors={playerColors}
                 robberPosition={robberPosition}
                 onVertexClick={onVertexClick ? (vertex) => onVertexClick({ x: x + vertex.x, y: y + vertex.y }) : undefined}
-                onEdgeClick={onEdgeClick ? (edge) => onEdgeClick({ 
-                  from: { x: x + edge.from.x, y: y + edge.from.y }, 
-                  to: { x: x + edge.to.x, y: y + edge.to.y } 
+                onEdgeClick={onEdgeClick ? (edge) => onEdgeClick({
+                  from: { x: x + edge.from.x, y: y + edge.from.y },
+                  to: { x: x + edge.to.x, y: y + edge.to.y }
                 }) : undefined}
                 onHexClick={onHexClick}
                 isInteractive={isInteractive}
               />
+            </g>
+          );
+        })}
+        {harbors.map((harbor, i) => {
+          const midX = (harbor.edge.from.x + harbor.edge.to.x) / 2;
+          const midY = (harbor.edge.from.y + harbor.edge.to.y) / 2;
+          const dx = harbor.edge.to.x - harbor.edge.from.x;
+          const dy = harbor.edge.to.y - harbor.edge.from.y;
+          const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          const sideSign = harbor.oceanSide === 'right' ? 1 : -1;
+          const offsetX = sideSign * -(dy / length) * 15;
+          const offsetY = sideSign * (dx / length) * 15;
+
+          const fill = harbor.type === 'any' ? '#ffffff' : resourceColors[harbor.type as ResourceType];
+          const textColor = harbor.type === 'any' ? '#000000' : '#ffffff';
+
+          return (
+            <g
+              key={`harbor-${i}`}
+              transform={`translate(${midX + offsetX},${midY + offsetY}) rotate(${angle})`}
+              pointerEvents="none"
+            >
+              <rect x={-length / 2} y={-8} width={length} height={16} fill={fill} stroke="#000" strokeWidth={2} />
+              <text textAnchor="middle" dy={4} className="text-xs" fill={textColor}>
+                {harbor.type === 'any' ? '3:1' : `2:1 ${harbor.type}`}
+              </text>
             </g>
           );
         })}

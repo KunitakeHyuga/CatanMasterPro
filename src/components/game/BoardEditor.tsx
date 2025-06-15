@@ -6,8 +6,22 @@ import { HexBoard } from './HexBoard';
 import { Shuffle, RotateCcw, Save, Download, Upload, Home, Route } from 'lucide-react';
 import { generateDefaultBoard } from './GameForm';
 
+const computeVertices = (size: number): Vertex[] => {
+  const verts: Vertex[] = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i - Math.PI / 2;
+    verts.push({ x: size * Math.cos(angle), y: size * Math.sin(angle) });
+  }
+  return verts;
+};
+
+const getHexPosition = (col: number, row: number, size: number) => ({
+  x: col * (size * Math.sqrt(3)),
+  y: row * (size * 1.5),
+});
+
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
-const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'ocean', 'any'];
+const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'any'];
 const numberTokens = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12];
 
 interface BoardEditorProps {
@@ -84,7 +98,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
 
   const handleEdgeClick = useCallback((edge: Edge) => {
     if (selectedTool === 'road' && selectedPlayer) {
-      const existingRoad = roads.find(r => 
+      const existingRoad = roads.find(r =>
         (Math.abs(r.position.from.x - edge.from.x) < 5 && Math.abs(r.position.from.y - edge.from.y) < 5 &&
          Math.abs(r.position.to.x - edge.to.x) < 5 && Math.abs(r.position.to.y - edge.to.y) < 5) ||
         (Math.abs(r.position.from.x - edge.to.x) < 5 && Math.abs(r.position.from.y - edge.to.y) < 5 &&
@@ -103,7 +117,70 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         setRoads(prev => [...prev, newRoad]);
       }
     }
-  }, [selectedTool, selectedPlayer, roads]);
+    if (selectedTool === 'harbor') {
+      const size = 60;
+      const tolerance = 5;
+      const matchingHexes: HexTile[] = [];
+
+      hexTiles.forEach(hex => {
+        const pos = getHexPosition(hex.position.x, hex.position.y, size);
+        const verts = computeVertices(size);
+        verts.forEach((v, i) => {
+          const from = { x: pos.x + v.x, y: pos.y + v.y };
+          const to = {
+            x: pos.x + verts[(i + 1) % 6].x,
+            y: pos.y + verts[(i + 1) % 6].y,
+          };
+          const matches =
+            (Math.abs(from.x - edge.from.x) < tolerance &&
+              Math.abs(from.y - edge.from.y) < tolerance &&
+              Math.abs(to.x - edge.to.x) < tolerance &&
+              Math.abs(to.y - edge.to.y) < tolerance) ||
+            (Math.abs(from.x - edge.to.x) < tolerance &&
+              Math.abs(from.y - edge.to.y) < tolerance &&
+              Math.abs(to.x - edge.from.x) < tolerance &&
+              Math.abs(to.y - edge.from.y) < tolerance);
+          if (matches) matchingHexes.push(hex);
+        });
+      });
+
+      if (matchingHexes.length !== 2) return;
+      const oceanHex = matchingHexes.find(h => h.type === 'ocean');
+      const landHex = matchingHexes.find(h => h.type !== 'ocean');
+      if (!oceanHex || !landHex) return;
+
+      const oceanCenter = getHexPosition(oceanHex.position.x, oceanHex.position.y, size);
+      const midPoint = {
+        x: (edge.from.x + edge.to.x) / 2,
+        y: (edge.from.y + edge.to.y) / 2,
+      };
+
+      const edgeVec = { x: edge.to.x - edge.from.x, y: edge.to.y - edge.from.y };
+      const rightNormal = { x: -edgeVec.y, y: edgeVec.x };
+      const toOcean = { x: oceanCenter.x - midPoint.x, y: oceanCenter.y - midPoint.y };
+      const dot = rightNormal.x * toOcean.x + rightNormal.y * toOcean.y;
+      const oceanSide: 'left' | 'right' = dot > 0 ? 'right' : 'left';
+
+      const existingIndex = harbors.findIndex(h =>
+        Math.abs(h.position.x - midPoint.x) < tolerance &&
+        Math.abs(h.position.y - midPoint.y) < tolerance,
+      );
+
+      if (existingIndex !== -1) {
+        setHarbors(prev => prev.filter((_, i) => i !== existingIndex));
+      } else {
+        setHarbors(prev => [
+          ...prev,
+          {
+            type: selectedHarbor,
+            position: midPoint,
+            edge,
+            oceanSide,
+          },
+        ]);
+      }
+    }
+  }, [selectedTool, selectedPlayer, roads, harbors, selectedHarbor, hexTiles]);
 
   const randomizeBoard = () => {
     const landTiles = hexTiles.filter(h => h.type !== 'ocean');

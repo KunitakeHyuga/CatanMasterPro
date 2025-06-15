@@ -1,7 +1,14 @@
 // Core data models for the Catan Master Pro application
 
 export type ResourceType = 'wood' | 'brick' | 'sheep' | 'wheat' | 'ore' | 'desert' | 'ocean';
-export type HarborType = ResourceType | 'any' | 'none';
+export type HarborType =
+  | 'wood'
+  | 'brick'
+  | 'sheep'
+  | 'wheat'
+  | 'ore'
+  | 'any'
+  | 'none';
 export type PlayerColor = 'red' | 'blue' | 'white' | 'orange' | 'green' | 'brown';
 
 export interface Player {
@@ -71,6 +78,12 @@ export interface Harbor {
     x: number;
     y: number;
   };
+  edge: Edge;
+  /**
+   * Side of the edge where the ocean hex lies relative to the edge orientation
+   * ("right" means the ocean is to the right when moving from edge.from to edge.to)
+   */
+  oceanSide: 'left' | 'right';
 }
 
 export interface NumberToken {
