@@ -86,6 +86,70 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
   const [selectedPlayer, setSelectedPlayer] = useState<string>(gamePlayers[0]?.id || '');
   const [selectedBuildingType, setSelectedBuildingType] = useState<'settlement' | 'city'>('settlement');
 
+  const availableVertices = React.useMemo(() => {
+    if (selectedTool !== 'building' || !selectedPlayer) return [] as Vertex[];
+    const verts: Vertex[] = [];
+    hexTiles.forEach(hex => {
+      const pos = getHexPosition(hex.position.x, hex.position.y, 60);
+      computeVertices(60).forEach(v => {
+        const globalV = { x: pos.x + v.x, y: pos.y + v.y };
+        if (!verts.some(existing => verticesEqual(existing, globalV))) {
+          verts.push(globalV);
+        }
+      });
+    });
+    return verts.filter(v => {
+      const hasBuilding = buildings.some(b => verticesEqual(b.position, v));
+      if (hasBuilding) return false;
+      const adjacent = getAdjacentVertices(v, hexTiles, 60);
+      const blocked = buildings.some(b => adjacent.some(a => verticesEqual(b.position, a)));
+      if (blocked) return false;
+      const hasRoad = roads.some(r =>
+        r.playerId === selectedPlayer &&
+        (verticesEqual(r.position.from, v) || verticesEqual(r.position.to, v))
+      );
+      return hasRoad;
+    });
+  }, [selectedTool, selectedPlayer, buildings, roads, hexTiles]);
+
+  const availableEdges = React.useMemo(() => {
+    if (selectedTool !== 'road' || !selectedPlayer) return [] as Edge[];
+    const edges: Edge[] = [];
+    hexTiles.forEach(hex => {
+      const pos = getHexPosition(hex.position.x, hex.position.y, 60);
+      const verts = computeVertices(60).map(v => ({ x: pos.x + v.x, y: pos.y + v.y }));
+      verts.forEach((v, i) => {
+        const from = v;
+        const to = verts[(i + 1) % 6];
+        if (!edges.some(e =>
+          (verticesEqual(e.from, from) && verticesEqual(e.to, to)) ||
+          (verticesEqual(e.from, to) && verticesEqual(e.to, from))
+        )) {
+          edges.push({ from, to });
+        }
+      });
+    });
+    return edges.filter(e => {
+      const exists = roads.some(r =>
+        (verticesEqual(r.position.from, e.from) && verticesEqual(r.position.to, e.to)) ||
+        (verticesEqual(r.position.from, e.to) && verticesEqual(r.position.to, e.from))
+      );
+      if (exists) return false;
+      const connectedBuilding = buildings.some(b =>
+        b.playerId === selectedPlayer &&
+        (verticesEqual(b.position, e.from) || verticesEqual(b.position, e.to))
+      );
+      const connectedRoad = roads.some(r =>
+        r.playerId === selectedPlayer &&
+        (verticesEqual(r.position.from, e.from) ||
+         verticesEqual(r.position.to, e.from) ||
+         verticesEqual(r.position.from, e.to) ||
+         verticesEqual(r.position.to, e.to))
+      );
+      return connectedBuilding || connectedRoad;
+    });
+  }, [selectedTool, selectedPlayer, buildings, roads, hexTiles]);
+
   const handleHexClick = useCallback((hex: HexTile) => {
     if (selectedTool === 'resource') {
       setHexTiles(prev => prev.map(h => 
@@ -563,6 +627,8 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
             onVertexClick={handleVertexClick}
             onEdgeClick={handleEdgeClick}
             isInteractive={true}
+            highlightVertices={availableVertices}
+            highlightEdges={availableEdges}
             size={60}
           />
         </CardContent>
