@@ -45,6 +45,8 @@ interface GameState {
   // Development cards
   drawDevelopmentCard: (playerId: string) => DevelopmentCard | null;
   playDevelopmentCard: (playerId: string, cardId: string) => void;
+  updateDevelopmentCardDeck: (deck: DevelopmentCardDeck) => void;
+  updatePlayerDevelopmentCards: (playerId: string, cards: DevelopmentCard[]) => void;
   
   // Dice rolling
   rollDice: () => DiceRoll;
@@ -334,6 +336,22 @@ export const useGameStore = create<GameState>()(
             player.id === playerId
               ? { ...player, totalPoints: updatedPoints }
               : player
+          )
+        });
+      },
+
+      updateDevelopmentCardDeck: (deck) => {
+        const { currentGame } = get();
+        if (!currentGame) return;
+        get().updateCurrentGame({ developmentCardDeck: deck });
+      },
+
+      updatePlayerDevelopmentCards: (playerId, cards) => {
+        const { currentGame } = get();
+        if (!currentGame) return;
+        get().updateCurrentGame({
+          players: currentGame.players.map(p =>
+            p.id === playerId ? { ...p, developmentCards: cards } : p
           )
         });
       },
