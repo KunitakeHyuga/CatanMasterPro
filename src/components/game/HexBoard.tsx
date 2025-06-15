@@ -67,14 +67,10 @@ const Hex: React.FC<HexProps> = ({
     robberPosition.x === hex.position.x && 
     robberPosition.y === hex.position.y;
 
-  // Filter buildings and roads for this hex
-  const hexBuildings = buildings.filter(b => 
-    Math.abs(b.position.x) < size && Math.abs(b.position.y) < size
-  );
-  
-  const hexRoads = roads.filter(r => 
-    Math.abs(r.position.from.x) < size * 1.5 && Math.abs(r.position.from.y) < size * 1.5
-  );
+  // Buildings and roads for this hex are already filtered by the parent
+  // component. Simply use them directly.
+  const hexBuildings = buildings;
+  const hexRoads = roads;
 
   return (
     <g onClick={() => onHexClick?.(hex)} className={isInteractive ? 'cursor-pointer hover:opacity-80' : ''}>
@@ -162,10 +158,10 @@ const Hex: React.FC<HexProps> = ({
       ))}
       
       {/* インタラクティブなエッジ（道路配置用） */}
-      {isInteractive && edges.map((e, i) => {
-        const midX = (e.from.x + e.to.x) / 2;
-        const midY = (e.from.y + e.to.y) / 2;
-        const angle = (Math.atan2(e.to.y - e.from.y, e.to.x - e.from.x) * 180) / Math.PI;
+      {isInteractive && edges.map((edge, i) => {
+        const midX = (edge.from.x + edge.to.x) / 2;
+        const midY = (edge.from.y + edge.to.y) / 2;
+        const angle = (Math.atan2(edge.to.y - edge.from.y, edge.to.x - edge.from.x) * 180) / Math.PI;
         return (
           <rect
             key={i}
@@ -176,9 +172,9 @@ const Hex: React.FC<HexProps> = ({
             transform={`rotate(${angle} ${midX} ${midY})`}
             fill="transparent"
             className="hover:fill-gray-200 opacity-0 hover:opacity-50 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdgeClick?.(e);
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdgeClick?.(edge);
             }}
           />
         );
@@ -242,34 +238,49 @@ export const HexBoard: React.FC<HexBoardProps> = ({
       >
         {hexes.map(hex => {
           const { x, y } = getHexPosition(hex.position.x, hex.position.y);
-          
-          // Filter buildings and roads for this specific hex position
-          const hexBuildings = buildings.filter(b => {
-            const hexVertices = computeVertices(size);
-            return hexVertices.some(v => 
-              Math.abs(b.position.x - (x + v.x)) < 10 && 
-              Math.abs(b.position.y - (y + v.y)) < 10
-            );
-          });
-          
-          const hexRoads = roads.filter(r => {
-            const hexVertices = computeVertices(size);
-            const hexEdges = hexVertices.map((v, i) => ({ 
-              from: { x: x + v.x, y: y + v.y }, 
-              to: { x: x + hexVertices[(i + 1) % 6].x, y: y + hexVertices[(i + 1) % 6].y } 
+
+          // Find buildings that belong to this hex and convert them to
+          // coordinates relative to the hex so that they render correctly
+          const hexBuildings = buildings
+            .filter(b => {
+              const hexVertices = computeVertices(size);
+              return hexVertices.some(v =>
+                Math.abs(b.position.x - (x + v.x)) < 10 &&
+                Math.abs(b.position.y - (y + v.y)) < 10
+              );
+            })
+            .map(b => ({
+              ...b,
+              position: { x: b.position.x - x, y: b.position.y - y },
             }));
-            
-            return hexEdges.some(edge => 
-              (Math.abs(r.position.from.x - edge.from.x) < 10 && 
-               Math.abs(r.position.from.y - edge.from.y) < 10 &&
-               Math.abs(r.position.to.x - edge.to.x) < 10 && 
-               Math.abs(r.position.to.y - edge.to.y) < 10) ||
-              (Math.abs(r.position.from.x - edge.to.x) < 10 && 
-               Math.abs(r.position.from.y - edge.to.y) < 10 &&
-               Math.abs(r.position.to.x - edge.from.x) < 10 && 
-               Math.abs(r.position.to.y - edge.from.y) < 10)
-            );
-          });
+
+          // Same for roads
+          const hexRoads = roads
+            .filter(r => {
+              const hexVertices = computeVertices(size);
+              const hexEdges = hexVertices.map((v, i) => ({
+                from: { x: x + v.x, y: y + v.y },
+                to: { x: x + hexVertices[(i + 1) % 6].x, y: y + hexVertices[(i + 1) % 6].y },
+              }));
+
+              return hexEdges.some(edge =>
+                (Math.abs(r.position.from.x - edge.from.x) < 10 &&
+                 Math.abs(r.position.from.y - edge.from.y) < 10 &&
+                 Math.abs(r.position.to.x - edge.to.x) < 10 &&
+                 Math.abs(r.position.to.y - edge.to.y) < 10) ||
+                (Math.abs(r.position.from.x - edge.to.x) < 10 &&
+                 Math.abs(r.position.from.y - edge.to.y) < 10 &&
+                 Math.abs(r.position.to.x - edge.from.x) < 10 &&
+                 Math.abs(r.position.to.y - edge.from.y) < 10)
+              );
+            })
+            .map(r => ({
+              ...r,
+              position: {
+                from: { x: r.position.from.x - x, y: r.position.from.y - y },
+                to: { x: r.position.to.x - x, y: r.position.to.y - y },
+              },
+            }));
           
           return (
             <g key={hex.id} transform={`translate(${x},${y})`}>
