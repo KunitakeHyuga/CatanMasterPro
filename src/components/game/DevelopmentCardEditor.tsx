@@ -7,6 +7,8 @@ import {
 } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { Scroll, Sword, Trophy, Route, Coins, Building } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
+
 
 interface DevelopmentCardEditorProps {
   player: GamePlayer;
