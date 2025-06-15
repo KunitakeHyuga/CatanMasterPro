@@ -119,6 +119,14 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
           );
           if (blocked) return;
 
+          const hasOwnRoad = roads.some(
+            (r) =>
+              r.playerId === selectedPlayer &&
+              (verticesEqual(r.position.from, vertex) ||
+                verticesEqual(r.position.to, vertex))
+          );
+          if (!hasOwnRoad) return;
+
           const newBuilding: Building = {
             type: selectedBuildingType,
             position: vertex,
@@ -128,7 +136,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         }
       }
     },
-    [selectedTool, selectedPlayer, selectedBuildingType, buildings, hexTiles]
+    [selectedTool, selectedPlayer, selectedBuildingType, buildings, hexTiles, roads]
   );
 
   const handleEdgeClick = useCallback(
@@ -148,15 +156,17 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         } else {
           const connectedBuilding = buildings.some(
             (b) =>
-              verticesEqual(b.position, edge.from) ||
-              verticesEqual(b.position, edge.to)
+              b.playerId === selectedPlayer &&
+              (verticesEqual(b.position, edge.from) ||
+                verticesEqual(b.position, edge.to))
           );
           const connectedRoad = roads.some(
             (r) =>
-              verticesEqual(r.position.from, edge.from) ||
-              verticesEqual(r.position.to, edge.from) ||
-              verticesEqual(r.position.from, edge.to) ||
-              verticesEqual(r.position.to, edge.to)
+              r.playerId === selectedPlayer &&
+              (verticesEqual(r.position.from, edge.from) ||
+                verticesEqual(r.position.to, edge.from) ||
+                verticesEqual(r.position.from, edge.to) ||
+                verticesEqual(r.position.to, edge.to))
           );
 
           if (!connectedBuilding && !connectedRoad) return;
@@ -231,7 +241,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         ]);
       }
     }
-  }, [selectedTool, selectedPlayer, roads, harbors, selectedHarbor, hexTiles]);
+  }, [selectedTool, selectedPlayer, roads, buildings, harbors, selectedHarbor, hexTiles]);
 
   const randomizeBoard = () => {
     const landTiles = hexTiles.filter(h => h.type !== 'ocean');
