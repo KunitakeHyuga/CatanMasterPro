@@ -572,6 +572,3 @@ export const generateDefaultDeck = (): DevelopmentCardDeck => ({
   totalRemaining: 25
 });
 
-// Import HexBoard component
-import { HexBoard } from './HexBoard';
-import { HexTile, ResourceType } from '../../models/types';
