@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { BoardEditor } from './BoardEditor';
 import { BoardTemplates } from './BoardTemplates';
 import { HexBoard } from './HexBoard';
+import { DevelopmentCardEditor } from './DevelopmentCardEditor';
 import { Plus, Minus, UserPlus, X, Save, Settings, Grid } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { GameSession, PlayerColor, GamePlayer, BoardSetup, HexTile, ResourceType } from '../../models/types';
@@ -327,40 +328,50 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
             ) : (
               <div className="space-y-3">
                 {gamePlayers.map((player) => (
-                  <div key={player.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-md">
-                    <div 
-                      className="h-4 w-4 rounded-full" 
-                      style={{ backgroundColor: player.color }}
-                    />
-                    <div className="flex-1">
-                      <span className="font-medium">{player.name}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
+                  <div key={player.id} className="space-y-2 p-3 bg-gray-50 rounded-md">
+                    <div className="flex items-center space-x-4">
+                      <div
+                        className="h-4 w-4 rounded-full"
+                        style={{ backgroundColor: player.color }}
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium">{player.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => updatePlayerScore(player.id, Math.max(0, player.score - 1))}
+                          icon={<Minus size={16} />}
+                        />
+                        <span className="w-8 text-center">{player.score}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => updatePlayerScore(player.id, player.score + 1)}
+                          icon={<Plus size={16} />}
+                        />
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Rank: {player.rank}
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => updatePlayerScore(player.id, Math.max(0, player.score - 1))}
-                        icon={<Minus size={16} />}
-                      />
-                      <span className="w-8 text-center">{player.score}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => updatePlayerScore(player.id, player.score + 1)}
-                        icon={<Plus size={16} />}
+                        onClick={() => removePlayer(player.id)}
+                        icon={<X size={16} />}
                       />
                     </div>
-                    <div className="text-sm text-gray-500">
-                      Rank: {player.rank}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removePlayer(player.id)}
-                      icon={<X size={16} />}
+                    <DevelopmentCardEditor
+                      player={player}
+                      onChange={(p) =>
+                        setGamePlayers(current =>
+                          current.map(g => (g.id === p.id ? p : g))
+                        )
+                      }
                     />
                   </div>
                 ))}
@@ -402,12 +413,6 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
         </CardContent>
       </Card>
 
-      <DevelopmentCardEditor
-        deck={developmentCardDeck}
-        players={gamePlayers}
-        onDeckChange={setDevelopmentCardDeck}
-        onPlayersChange={setGamePlayers}
-      />
 
       <Card>
         <CardHeader>
@@ -571,4 +576,3 @@ export const generateDefaultDeck = (): DevelopmentCardDeck => ({
   monopoly: 2,
   totalRemaining: 25
 });
-

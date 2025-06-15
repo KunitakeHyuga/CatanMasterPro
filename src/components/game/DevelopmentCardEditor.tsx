@@ -1,86 +1,135 @@
 import React from 'react';
 import { Button } from '../ui/Button';
-import { GamePlayer, DevelopmentCard } from '../../models/types';
+import {
+  GamePlayer,
+  DevelopmentCard,
+  DevelopmentCardType
+} from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { Scroll, Sword, Trophy, Route, Coins, Building } from 'lucide-react';
 
 interface DevelopmentCardEditorProps {
   player: GamePlayer;
+  onChange?: (player: GamePlayer) => void;
 }
 
-// テーブル形式でカードを管理しやすくするための編集用コンポーネント
-export const DevelopmentCardEditor: React.FC<DevelopmentCardEditorProps> = ({ player }) => {
-  const { playDevelopmentCard } = useGameStore();
+export const DevelopmentCardEditor: React.FC<DevelopmentCardEditorProps> = ({
+  player,
+  onChange
+}) => {
+  // ストアとフォーム状態を同期させるためストア更新関数を取得
+  const { updatePlayerDevelopmentCards } = useGameStore();
 
-  // カード種別に応じたアイコンを返す
-  const getCardIcon = (type: string) => {
-    switch (type) {
-      case 'knight':
-        return <Sword size={16} className="text-red-600" />;
-      case 'victory_point':
-        return <Trophy size={16} className="text-amber-600" />;
-      case 'road_building':
-        return <Route size={16} className="text-blue-600" />;
-      case 'year_of_plenty':
-        return <Coins size={16} className="text-green-600" />;
-      case 'monopoly':
-        return <Building size={16} className="text-purple-600" />;
-      default:
-        return <Scroll size={16} className="text-gray-600" />;
-    }
+  const cardIcons: Record<DevelopmentCardType, JSX.Element> = {
+    knight: <Sword size={16} className="text-red-600" />,
+    victory_point: <Trophy size={16} className="text-amber-600" />,
+    road_building: <Route size={16} className="text-blue-600" />,
+    year_of_plenty: <Coins size={16} className="text-green-600" />,
+    monopoly: <Building size={16} className="text-purple-600" />
   };
 
-  const handlePlay = (card: DevelopmentCard) => {
-    // 勝利点カードはプレイという概念がないため操作しない
-    if (card.isPlayed || card.type === 'victory_point') return;
-    playDevelopmentCard(player.id, card.id);
+  const cardTypeOptions: { value: DevelopmentCardType; label: string }[] = [
+    { value: 'knight', label: 'Knight' },
+    { value: 'victory_point', label: 'Victory Point' },
+    { value: 'road_building', label: 'Road Building' },
+    { value: 'year_of_plenty', label: 'Year of Plenty' },
+    { value: 'monopoly', label: 'Monopoly' }
+  ];
+
+  // カード変更時の共通処理
+  const applyChanges = (cards: DevelopmentCard[]) => {
+    const updated = { ...player, developmentCards: cards };
+    updatePlayerDevelopmentCards(player.id, cards);
+    onChange?.(updated);
+  };
+
+  // 新しいカードを追加
+  const addCard = (type: DevelopmentCardType) => {
+    const newCard: DevelopmentCard = {
+      id: uuidv4(),
+      type,
+      name:
+        type === 'victory_point'
+          ? 'Victory Point'
+          : type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      isPlayed: false
+    };
+    applyChanges([...player.developmentCards, newCard]);
+  };
+
+  // カード削除処理
+  const removeCard = (cardId: string) => {
+    applyChanges(player.developmentCards.filter(c => c.id !== cardId));
+  };
+
+  // 使用済みフラグ切り替え
+  const togglePlayed = (cardId: string) => {
+    applyChanges(
+      player.developmentCards.map(c =>
+        c.id === cardId ? { ...c, isPlayed: !c.isPlayed } : c
+      )
+    );
   };
 
   return (
-    <div className="space-y-2">
-      <div className="font-medium text-sm">{player.name}</div>
-      <table className="min-w-full text-sm border">
-        <thead>
-          <tr className="bg-gray-50 text-left">
-            <th className="px-2 py-1">Card</th>
-            <th className="px-2 py-1">Status</th>
-            <th className="px-2 py-1" />
-          </tr>
-        </thead>
-        <tbody>
-          {player.developmentCards.length === 0 ? (
-            <tr>
-              <td className="px-2 py-2 text-gray-500 italic" colSpan={3}>
-                No cards
-              </td>
-            </tr>
-          ) : (
-            player.developmentCards.map((card) => (
-              <tr key={card.id} className="border-t">
-                <td className="px-2 py-1 flex items-center">
-                  {getCardIcon(card.type)}
-                  <span className="ml-2">{card.name}</span>
-                </td>
-                <td className="px-2 py-1">
-                  {card.isPlayed ? 'Played' : 'Unused'}
-                </td>
-                <td className="px-2 py-1 text-right">
-                  {!card.isPlayed && card.type !== 'victory_point' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handlePlay(card)}
-                      className="text-xs px-2 py-1 h-auto"
-                    >
-                      Play
-                    </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>{player.name} Cards</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <select
+          className="border border-gray-300 rounded text-xs p-1"
+          onChange={e => {
+            const type = e.target.value as DevelopmentCardType;
+            if (type) {
+              addCard(type);
+              e.currentTarget.selectedIndex = 0;
+            }
+          }}
+        >
+          <option value="">Add Card</option>
+          {cardTypeOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        {player.developmentCards.length > 0 && (
+          <div className="space-y-1 text-xs">
+            {player.developmentCards.map(card => (
+              <div
+                key={card.id}
+                className="flex items-center justify-between border rounded px-2 py-1"
+              >
+                <div className="flex items-center space-x-2">
+                  {cardIcons[card.type]}
+                  <span>{card.name}</span>
+                  {card.isPlayed && (
+                    <span className="text-gray-500">(used)</span>
                   )}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => togglePlayed(card.id)}
+                    icon={card.isPlayed ? <Minus size={12} /> : <Plus size={12} />}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => removeCard(card.id)}
+                    icon={<Minus size={12} />}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
