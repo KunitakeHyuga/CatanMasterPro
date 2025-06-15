@@ -10,11 +10,18 @@ import { Button } from '../components/ui/Button';
 import { GameCard } from '../components/game/GameCard';
 import { PlayerCard } from '../components/player/PlayerCard';
 import { useGameStore } from '../store/gameStore';
-import { PlusCircle, Users, History, BarChart } from 'lucide-react';
+import { 
+  PlusCircle, 
+  Users, 
+  History, 
+  BarChart, 
+  Play,
+  Gamepad2
+} from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { games, players } = useGameStore();
+  const { games, players, currentGame } = useGameStore();
   
   // Get recent games
   const recentGames = [...games]
@@ -35,17 +42,62 @@ export const Dashboard: React.FC = () => {
     <Layout>
       <LayoutHeader>
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <Button 
-            onClick={() => navigate('/games/new')}
-            icon={<PlusCircle size={16} />}
-          >
-            New Game
-          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Catan Master Pro</h1>
+            <p className="text-gray-600 mt-1">Complete Catan game management system</p>
+          </div>
+          <div className="flex space-x-3">
+            {currentGame && currentGame.isActive ? (
+              <Button 
+                onClick={() => navigate('/game/active')}
+                className="bg-emerald-600 hover:bg-emerald-700"
+                icon={<Gamepad2 size={16} />}
+              >
+                Resume Game
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => navigate('/game/setup')}
+                icon={<Play size={16} />}
+              >
+                Start New Game
+              </Button>
+            )}
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/games/new')}
+              icon={<PlusCircle size={16} />}
+            >
+              Record Game
+            </Button>
+          </div>
         </div>
       </LayoutHeader>
       
       <LayoutContent>
+        {/* Active Game Alert */}
+        {currentGame && currentGame.isActive && (
+          <Card className="mb-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg">Game in Progress</h3>
+                  <p className="text-emerald-100">
+                    Turn {currentGame.currentTurn} • {currentGame.players.length} players
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => navigate('/game/active')}
+                  variant="secondary"
+                  icon={<Gamepad2 size={16} />}
+                >
+                  Continue Playing
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-emerald-600 text-white">
             <CardContent className="p-6">
@@ -128,10 +180,10 @@ export const Dashboard: React.FC = () => {
                 <CardContent className="p-6 text-center">
                   <p className="text-gray-500 mb-4">No games recorded yet</p>
                   <Button 
-                    onClick={() => navigate('/games/new')}
-                    icon={<PlusCircle size={16} />}
+                    onClick={() => navigate('/game/setup')}
+                    icon={<Play size={16} />}
                   >
-                    Record Your First Game
+                    Start Your First Game
                   </Button>
                 </CardContent>
               </Card>

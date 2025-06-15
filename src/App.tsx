@@ -9,6 +9,8 @@ import { NewGame } from './pages/NewGame';
 import { EditGame } from './pages/EditGame';
 import { NewPlayer } from './pages/NewPlayer';
 import { EditPlayer } from './pages/EditPlayer';
+import { GameSetupPage } from './pages/GameSetupPage';
+import { ActiveGame } from './pages/ActiveGame';
 
 function App() {
   return (
@@ -20,6 +22,9 @@ function App() {
         <Route path="/games/:id" element={<GameDetails />} />
         <Route path="/games/new" element={<NewGame />} />
         <Route path="/games/edit/:id" element={<EditGame />} />
+        
+        <Route path="/game/setup" element={<GameSetupPage />} />
+        <Route path="/game/active" element={<ActiveGame />} />
         
         <Route path="/players" element={<PlayersList />} />
         <Route path="/players/:id" element={<PlayerDetails />} />

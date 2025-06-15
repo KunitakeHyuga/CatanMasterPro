@@ -1,7 +1,8 @@
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, Users, History, Settings, Hexagon } from 'lucide-react';
+import { LayoutGrid, Users, History, Settings, Hexagon, Play, Gamepad2 } from 'lucide-react';
+import { useGameStore } from '../../store/gameStore';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -32,14 +33,15 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
+  badge?: string;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon, label, active }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, icon, label, active, badge }) => {
   return (
     <Link
       to={to}
       className={twMerge(
-        'flex items-center px-4 py-3 text-sm font-medium rounded-md',
+        'flex items-center px-4 py-3 text-sm font-medium rounded-md relative',
         active
           ? 'bg-emerald-800 text-white'
           : 'text-gray-300 hover:bg-emerald-700 hover:text-white'
@@ -47,6 +49,11 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, active }) => {
     >
       <span className="mr-3">{icon}</span>
       {label}
+      {badge && (
+        <span className="ml-auto px-2 py-0.5 text-xs bg-emerald-500 text-white rounded-full">
+          {badge}
+        </span>
+      )}
     </Link>
   );
 };
@@ -54,6 +61,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, active }) => {
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const pathname = location.pathname;
+  const { currentGame } = useGameStore();
   
   return (
     <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-emerald-900">
@@ -71,10 +79,38 @@ const Sidebar: React.FC = () => {
             label="Dashboard"
             active={pathname === '/'}
           />
+          
+          {/* Active Game Section */}
+          {currentGame && currentGame.isActive && (
+            <>
+              <div className="px-4 py-2 text-xs font-semibold text-emerald-300 uppercase tracking-wider">
+                Active Game
+              </div>
+              <NavItem
+                to="/game/active"
+                icon={<Gamepad2 size={20} />}
+                label="Current Game"
+                active={pathname === '/game/active'}
+                badge="LIVE"
+              />
+            </>
+          )}
+          
+          <NavItem
+            to="/game/setup"
+            icon={<Play size={20} />}
+            label="New Game"
+            active={pathname === '/game/setup'}
+          />
+          
+          <div className="px-4 py-2 text-xs font-semibold text-emerald-300 uppercase tracking-wider">
+            Management
+          </div>
+          
           <NavItem
             to="/games"
             icon={<History size={20} />}
-            label="Games"
+            label="Game History"
             active={pathname.startsWith('/games')}
           />
           <NavItem

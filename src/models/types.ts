@@ -1,4 +1,4 @@
-// Core data models for the Catan Master Pro application
+// Core data models for the Catan Complete Management System
 
 export type ResourceType = 'wood' | 'brick' | 'sheep' | 'wheat' | 'ore' | 'desert' | 'ocean';
 export type HarborType =
@@ -10,6 +10,20 @@ export type HarborType =
   | 'any'
   | 'none';
 export type PlayerColor = 'red' | 'blue' | 'white' | 'orange' | 'green' | 'brown';
+
+export type DevelopmentCardType = 
+  | 'knight' 
+  | 'victory_point' 
+  | 'road_building' 
+  | 'year_of_plenty' 
+  | 'monopoly';
+
+export type VictoryPointCardType = 
+  | 'university'
+  | 'library'
+  | 'parliament'
+  | 'market'
+  | 'church';
 
 export interface Player {
   id: string;
@@ -39,6 +53,34 @@ export interface BuildingCount {
   settlements: number;
   cities: number;
   devCards: number;
+}
+
+export interface DevelopmentCard {
+  id: string;
+  type: DevelopmentCardType;
+  name: string;
+  isPlayed: boolean;
+  victoryPointValue?: number;
+  victoryPointType?: VictoryPointCardType;
+  playedTurn?: number;
+}
+
+export interface GamePlayer {
+  id: string;
+  playerId: string;
+  name: string;
+  color: PlayerColor;
+  score: number;
+  rank: number;
+  resourceProduction: ResourceCount;
+  buildings: BuildingCount;
+  resources: ResourceCount;
+  developmentCards: DevelopmentCard[];
+  knightsPlayed: number;
+  longestRoadLength: number;
+  hasLongestRoad: boolean;
+  hasLargestArmy: boolean;
+  totalPoints: number;
 }
 
 export interface Vertex {
@@ -105,15 +147,13 @@ export interface BoardSetup {
   roads: Road[];
 }
 
-export interface GamePlayer {
-  id: string;
-  playerId: string;
-  name: string;
-  color: PlayerColor;
-  score: number;
-  rank: number;
-  resourceProduction: ResourceCount;
-  buildings: BuildingCount;
+export interface DevelopmentCardDeck {
+  knights: number; // 14 cards
+  victoryPoints: DevelopmentCard[]; // 5 cards
+  roadBuilding: number; // 2 cards
+  yearOfPlenty: number; // 2 cards
+  monopoly: number; // 2 cards
+  totalRemaining: number;
 }
 
 export interface GameSession {
@@ -125,9 +165,35 @@ export interface GameSession {
   boardSetup: BoardSetup;
   notes: string;
   tags: string[];
+  currentTurn: number;
+  currentPlayer: string;
+  developmentCardDeck: DevelopmentCardDeck;
+  isActive: boolean;
+  turnHistory: TurnAction[];
+}
+
+export interface TurnAction {
+  turn: number;
+  playerId: string;
+  action: string;
+  details: any;
+  timestamp: string;
 }
 
 export interface SavedBoard extends BoardSetup {
   id: string;
   createdAt: string;
+}
+
+export interface DiceRoll {
+  die1: number;
+  die2: number;
+  total: number;
+  timestamp: string;
+}
+
+export interface GameState {
+  currentGame: GameSession | null;
+  diceHistory: DiceRoll[];
+  lastRoll: DiceRoll | null;
 }
