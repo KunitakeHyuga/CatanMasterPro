@@ -47,6 +47,19 @@ const getAdjacentVertices = (
   return adjacent;
 };
 
+// 頂点に隣接するヘクスタイルを取得するためのユーティリティ
+const getAdjacentHexes = (
+  vertex: Vertex,
+  hexes: HexTile[],
+  size: number
+) =>
+  hexes.filter((hex) => {
+    const pos = getHexPosition(hex.position.x, hex.position.y, size);
+    return computeVertices(size).some((v) =>
+      verticesEqual({ x: pos.x + v.x, y: pos.y + v.y }, vertex)
+    );
+  });
+
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
 const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'any'];
 const numberTokens = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12];
@@ -104,6 +117,9 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
     return verts.filter((v) => {
       const hasBuilding = buildings.some((b) => verticesEqual(b.position, v));
       if (hasBuilding) return false;
+      const adjHexes = getAdjacentHexes(v, hexTiles, 60);
+      // 陸タイルが隣接していない頂点では建物を置けない
+      if (!adjHexes.some((h) => h.type !== 'ocean')) return false;
       const adjacent = getAdjacentVertices(v, hexTiles, 60);
       const blocked = buildings.some((b) => adjacent.some((a) => verticesEqual(b.position, a)));
       if (blocked) return false;
@@ -190,6 +206,9 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
           // Remove existing building
           setBuildings((prev) => prev.filter((b) => b !== existingBuilding));
         } else {
+          const adjHexes = getAdjacentHexes(vertex, hexTiles, 60);
+          // 陸タイルに面していない場合は設置不可
+          if (!adjHexes.some((h) => h.type !== 'ocean')) return;
           const adjacent = getAdjacentVertices(vertex, hexTiles, 60);
           const blocked = buildings.some((b) =>
             adjacent.some((v) => verticesEqual(b.position, v))
