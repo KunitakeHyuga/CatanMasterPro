@@ -29,7 +29,20 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   const [gameType, setGameType] = useState<'standard' | 'seafarers' | 'cities' | 'traders' | 'america'>('standard');
   
   const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>(
-    initialGame?.players || []
+    initialGame?.players.map(p => ({
+      resources: p.resources ?? { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
+      developmentCards: p.developmentCards ?? [],
+      knightsPlayed: p.knightsPlayed ?? 0,
+      longestRoadLength: p.longestRoadLength ?? 0,
+      hasLongestRoad: p.hasLongestRoad ?? false,
+      hasLargestArmy: p.hasLargestArmy ?? false,
+      totalPoints: p.totalPoints ?? 0,
+      ...p
+    })) || []
+  );
+
+  const [developmentCardDeck, setDevelopmentCardDeck] = useState<DevelopmentCardDeck>(
+    initialGame?.developmentCardDeck || generateDefaultDeck()
   );
   
   const [boardSetup, setBoardSetup] = useState<BoardSetup>(
@@ -75,7 +88,14 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
       score: 0,
       rank: gamePlayers.length + 1,
       resourceProduction: { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
-      buildings: { roads: 0, settlements: 0, cities: 0, devCards: 0 }
+      buildings: { roads: 0, settlements: 0, cities: 0, devCards: 0 },
+      resources: { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
+      developmentCards: [],
+      knightsPlayed: 0,
+      longestRoadLength: 0,
+      hasLongestRoad: false,
+      hasLargestArmy: false,
+      totalPoints: 0
     };
     
     setGamePlayers([...gamePlayers, newGamePlayer]);
@@ -145,6 +165,7 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
       players: gamePlayers,
       winner: gamePlayers.find(p => p.rank === 1)?.playerId || '',
       boardSetup,
+      developmentCardDeck,
       notes,
       tags
     };
@@ -372,19 +393,26 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="flex justify-center">
-              <div className="transform scale-75">
-                <HexBoard hexes={boardSetup.hexTiles} size={40} />
-              </div>
+        <CardContent>
+          <div className="flex justify-center">
+            <div className="transform scale-75">
+              <HexBoard hexes={boardSetup.hexTiles} size={40} />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Notes & Tags</CardTitle>
-          </CardHeader>
+      <DevelopmentCardEditor
+        deck={developmentCardDeck}
+        players={gamePlayers}
+        onDeckChange={setDevelopmentCardDeck}
+        onPlayersChange={setGamePlayers}
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Notes & Tags</CardTitle>
+        </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
@@ -466,3 +494,84 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     </form>
   );
 };
+
+// Board generation functions for different game types
+export const generateDefaultBoard = (gameType: 'standard' | 'seafarers' | 'cities' | 'traders' | 'america' = 'standard'): BoardSetup => {
+  const hexes: HexTile[] = [];
+  
+  let layout: number[];
+  let oceanIndices: Set<number>;
+  
+  switch (gameType) {
+    case 'seafarers':
+      layout = [5, 6, 7, 8, 9, 8, 7, 6, 5];
+      oceanIndices = new Set([0,1,2,3,4,5,11,12,18,19,26,27,34,35,41,42,43,44,45,46,47]);
+      break;
+    case 'cities':
+      layout = [4, 5, 6, 7, 6, 5, 4];
+      oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
+      break;
+    case 'traders':
+      layout = [4, 5, 6, 7, 6, 5, 4];
+      oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
+      break;
+    case 'america':
+      layout = [3, 4, 5, 6, 5, 4, 3];
+      oceanIndices = new Set([0,1,2,3,7,8,12,13,18,19,23,24,25,26,27]);
+      break;
+    default: // standard
+      layout = [4, 5, 6, 7, 6, 5, 4];
+      oceanIndices = new Set([0,1,2,3,4,8,9,14,15,21,22,27,28,32,33,34,35,36]);
+  }
+
+  const resources = ['wood', 'brick', 'sheep', 'wheat', 'ore'];
+  let hexId = 0;
+  
+  layout.forEach((rowSize, rowIndex) => {
+    const xOffset = (layout.length - rowSize) / 2;
+    for (let x = 0; x < rowSize; x++, hexId++) {
+      const type: ResourceType =
+        oceanIndices.has(hexId) ? 'ocean'
+        : hexId === Math.floor(layout.reduce((a, b) => a + b, 0) / 2) ? 'desert'
+        : resources[hexId % resources.length];
+
+      hexes.push({
+        id: `hex-${hexId}`,
+        type,
+        number: !['ocean','desert'].includes(type)
+          ? [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12][hexId % 18]
+          : undefined,
+        position: { x: x + xOffset, y: rowIndex }
+      });
+    }
+  });
+
+  return {
+    hexTiles: hexes,
+    numberTokens: [],
+    harbors: [],
+    robberPosition: { x: Math.floor(layout[Math.floor(layout.length/2)] / 2), y: Math.floor(layout.length / 2) },
+    buildings: [],
+    roads: []
+  };
+};
+
+// 山札の初期状態を生成
+export const generateDefaultDeck = (): DevelopmentCardDeck => ({
+  knights: 14,
+  victoryPoints: [
+    { id: uuidv4(), type: 'victory_point', name: 'University', isPlayed: false, victoryPointValue: 1 },
+    { id: uuidv4(), type: 'victory_point', name: 'Library', isPlayed: false, victoryPointValue: 1 },
+    { id: uuidv4(), type: 'victory_point', name: 'Parliament', isPlayed: false, victoryPointValue: 1 },
+    { id: uuidv4(), type: 'victory_point', name: 'Market', isPlayed: false, victoryPointValue: 1 },
+    { id: uuidv4(), type: 'victory_point', name: 'Church', isPlayed: false, victoryPointValue: 1 }
+  ],
+  roadBuilding: 2,
+  yearOfPlenty: 2,
+  monopoly: 2,
+  totalRemaining: 25
+});
+
+// Import HexBoard component
+import { HexBoard } from './HexBoard';
+import { HexTile, ResourceType } from '../../models/types';
