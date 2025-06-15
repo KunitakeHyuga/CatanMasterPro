@@ -21,7 +21,7 @@ const getHexPosition = (col: number, row: number, size: number) => ({
 });
 
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
-const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'ocean', 'any'];
+const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'any'];
 const numberTokens = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12];
 
 interface BoardEditorProps {
