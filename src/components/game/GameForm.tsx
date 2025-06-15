@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { BoardEditor } from './BoardEditor';
 import { BoardTemplates } from './BoardTemplates';
+import { HexBoard } from './HexBoard';
 import { Plus, Minus, UserPlus, X, Save, Settings, Grid } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  GameSession,
-  PlayerColor,
-  GamePlayer,
-  BoardSetup,
-  DevelopmentCardDeck,
-  DevelopmentCard
-} from '../../models/types';
-import { DevelopmentCardEditor } from './DevelopmentCardEditor';
+import { GameSession, PlayerColor, GamePlayer, BoardSetup, HexTile, ResourceType } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
 import { generateDefaultBoard } from '../../utils/board';
