@@ -71,6 +71,7 @@ export interface Harbor {
     x: number;
     y: number;
   };
+  edge: Edge;
 }
 
 export interface NumberToken {

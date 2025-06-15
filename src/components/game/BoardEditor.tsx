@@ -6,6 +6,20 @@ import { HexBoard } from './HexBoard';
 import { Shuffle, RotateCcw, Save, Download, Upload, Home, Route } from 'lucide-react';
 import { generateDefaultBoard } from './GameForm';
 
+const computeVertices = (size: number): Vertex[] => {
+  const verts: Vertex[] = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i - Math.PI / 2;
+    verts.push({ x: size * Math.cos(angle), y: size * Math.sin(angle) });
+  }
+  return verts;
+};
+
+const getHexPosition = (col: number, row: number, size: number) => ({
+  x: col * (size * Math.sqrt(3)),
+  y: row * (size * 1.5),
+});
+
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
 const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'ocean', 'any'];
 const numberTokens = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12];
@@ -104,13 +118,45 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
       }
     }
     if (selectedTool === 'harbor') {
+      const size = 60;
+      const tolerance = 5;
+      const matchingHexes: HexTile[] = [];
+
+      hexTiles.forEach(hex => {
+        const pos = getHexPosition(hex.position.x, hex.position.y, size);
+        const verts = computeVertices(size);
+        verts.forEach((v, i) => {
+          const from = { x: pos.x + v.x, y: pos.y + v.y };
+          const to = {
+            x: pos.x + verts[(i + 1) % 6].x,
+            y: pos.y + verts[(i + 1) % 6].y,
+          };
+          const matches =
+            (Math.abs(from.x - edge.from.x) < tolerance &&
+              Math.abs(from.y - edge.from.y) < tolerance &&
+              Math.abs(to.x - edge.to.x) < tolerance &&
+              Math.abs(to.y - edge.to.y) < tolerance) ||
+            (Math.abs(from.x - edge.to.x) < tolerance &&
+              Math.abs(from.y - edge.to.y) < tolerance &&
+              Math.abs(to.x - edge.from.x) < tolerance &&
+              Math.abs(to.y - edge.from.y) < tolerance);
+          if (matches) matchingHexes.push(hex);
+        });
+      });
+
+      if (matchingHexes.length !== 2) return;
+      const oceanHex = matchingHexes.find(h => h.type === 'ocean');
+      const landHex = matchingHexes.find(h => h.type !== 'ocean');
+      if (!oceanHex || !landHex) return;
+
       const midPoint = {
         x: (edge.from.x + edge.to.x) / 2,
-        y: (edge.from.y + edge.to.y) / 2
+        y: (edge.from.y + edge.to.y) / 2,
       };
+
       const existingIndex = harbors.findIndex(h =>
-        Math.abs(h.position.x - midPoint.x) < 5 &&
-        Math.abs(h.position.y - midPoint.y) < 5
+        Math.abs(h.position.x - midPoint.x) < tolerance &&
+        Math.abs(h.position.y - midPoint.y) < tolerance,
       );
 
       if (existingIndex !== -1) {
@@ -120,12 +166,13 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
           ...prev,
           {
             type: selectedHarbor,
-            position: midPoint
-          }
+            position: midPoint,
+            edge,
+          },
         ]);
       }
     }
-  }, [selectedTool, selectedPlayer, roads, harbors, selectedHarbor]);
+  }, [selectedTool, selectedPlayer, roads, harbors, selectedHarbor, hexTiles]);
 
   const randomizeBoard = () => {
     const landTiles = hexTiles.filter(h => h.type !== 'ocean');

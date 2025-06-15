@@ -302,14 +302,28 @@ export const HexBoard: React.FC<HexBoardProps> = ({
             </g>
           );
         })}
-        {harbors.map((harbor, i) => (
-          <g key={`harbor-${i}`} transform={`translate(${harbor.position.x},${harbor.position.y})`}>
-            <circle r={10} fill="#fff" stroke="#000" strokeWidth={2} />
-            <text textAnchor="middle" dy={4} className="text-xs">
-              {harbor.type === 'any' ? '3:1' : `2:1 ${harbor.type}`}
-            </text>
-          </g>
-        ))}
+        {harbors.map((harbor, i) => {
+          const midX = (harbor.edge.from.x + harbor.edge.to.x) / 2;
+          const midY = (harbor.edge.from.y + harbor.edge.to.y) / 2;
+          const dx = harbor.edge.to.x - harbor.edge.from.x;
+          const dy = harbor.edge.to.y - harbor.edge.from.y;
+          const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          const offsetX = -(dy / length) * 15;
+          const offsetY = (dx / length) * 15;
+          return (
+            <g
+              key={`harbor-${i}`}
+              transform={`translate(${midX + offsetX},${midY + offsetY}) rotate(${angle})`}
+              pointerEvents="none"
+            >
+              <rect x={-length / 2} y={-8} width={length} height={16} fill="#fff" stroke="#000" strokeWidth={2} />
+              <text textAnchor="middle" dy={4} className="text-xs">
+                {harbor.type === 'any' ? '3:1' : `2:1 ${harbor.type}`}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );
