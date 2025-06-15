@@ -49,19 +49,19 @@ export const GameDetails: React.FC = () => {
     }
   };
 
+  // プレイヤーIDと色の対応表を作成
+  const playerColors = React.useMemo(() => {
+    return game.players.reduce((acc, p) => {
+      acc[p.id] = p.color;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [game.players]);
+  
   // Sort players by rank
   const rankedPlayers = [...game.players].sort((a, b) => a.rank - b.rank);
 
   // HexBoard の参照を保持し画像として保存できるようにする
   const boardRef = useRef<SVGSVGElement>(null);
-
-  // プレイヤー ID から色を引くマップを構築
-  const playerColors = React.useMemo(() => {
-    return game.players.reduce((acc, p) => {
-      acc[p.playerId] = p.color;
-      return acc;
-    }, {} as Record<string, string>);
-  }, [game.players]);
 
   // export 処理で text 要素のスタイルを保持するためのヘルパー
   const inlineTextStyles = (svg: SVGSVGElement) => {
