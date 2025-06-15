@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { useGameStore } from '../../store/gameStore';
 import { useNavigate } from 'react-router-dom';
 import { GamePlayer, PlayerColor } from '../../models/types';
-import { generateDefaultBoard } from './GameForm';
+import { generateDefaultBoard } from '../../utils/board';
 import { Plus, Minus, Play, Users } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 

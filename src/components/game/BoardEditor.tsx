@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { HexTile, ResourceType, Harbor, HarborType, BoardSetup, GamePlayer, Building, Road, Vertex, Edge } from '../../models/types';
 import { HexBoard } from './HexBoard';
 import { Shuffle, RotateCcw, Save, Download, Upload, Home, Route } from 'lucide-react';
-import { generateDefaultBoard } from './GameForm';
+import { generateDefaultBoard } from '../../utils/board';
 
 const computeVertices = (size: number): Vertex[] => {
   const verts: Vertex[] = [];
