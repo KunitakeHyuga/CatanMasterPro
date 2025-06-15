@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { BoardSetup, HexTile, ResourceType, Harbor } from '../../models/types';
 import { HexBoard } from './HexBoard';
-import { generateDefaultBoard } from './GameForm';
+import { generateDefaultBoard } from '../../utils/board';
 
 interface BoardTemplatesProps {
   onSelectTemplate: (board: BoardSetup) => void;
