@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Layout, 
@@ -11,12 +11,13 @@ import { HexBoard } from '../components/game/HexBoard';
 import { format } from 'date-fns';
 import { useGameStore } from '../store/gameStore';
 import { 
-  ArrowLeft, 
-  Edit, 
-  Trash2, 
-  Clock, 
-  Trophy, 
-  CalendarDays 
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Clock,
+  Trophy,
+  CalendarDays,
+  Download
 } from 'lucide-react';
 
 export const GameDetails: React.FC = () => {
@@ -58,6 +59,60 @@ export const GameDetails: React.FC = () => {
   
   // Sort players by rank
   const rankedPlayers = [...game.players].sort((a, b) => a.rank - b.rank);
+
+  // HexBoard の参照を保持し画像として保存できるようにする
+  const boardRef = useRef<SVGSVGElement>(null);
+
+  // プレイヤー ID から色を引くマップを構築
+  const playerColors = React.useMemo(() => {
+    return game.players.reduce((acc, p) => {
+      acc[p.playerId] = p.color;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [game.players]);
+
+  // export 処理で text 要素のスタイルを保持するためのヘルパー
+  const inlineTextStyles = (svg: SVGSVGElement) => {
+    const texts = svg.querySelectorAll('text');
+    texts.forEach(t => {
+      const style = window.getComputedStyle(t);
+      t.setAttribute('font-size', style.fontSize);
+      t.setAttribute('font-family', style.fontFamily);
+      t.setAttribute('font-weight', style.fontWeight);
+    });
+  };
+
+  // ボードを画像としてエクスポートする
+  const exportBoard = () => {
+    const svgEl = boardRef.current;
+    if (!svgEl) return;
+    inlineTextStyles(svgEl);
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svgEl);
+    const width = svgEl.clientWidth;
+    const height = svgEl.clientHeight;
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    img.onload = () => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'catan-board.jpg';
+        link.click();
+        URL.revokeObjectURL(url);
+      }, 'image/jpeg');
+    };
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgStr)}`;
+  };
   
   return (
     <Layout>
@@ -169,11 +224,28 @@ export const GameDetails: React.FC = () => {
             </Card>
             
             <Card>
-              <CardHeader>
+              <CardHeader className="flex items-center justify-between">
                 <CardTitle>Board Setup</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportBoard}
+                  icon={<Download size={16} />}
+                >
+                  Export
+                </Button>
               </CardHeader>
               <CardContent className="flex justify-center">
-                <HexBoard hexes={game.boardSetup.hexTiles} />
+                <HexBoard
+                  ref={boardRef}
+                  hexes={game.boardSetup.hexTiles}
+                  harbors={game.boardSetup.harbors}
+                  buildings={game.boardSetup.buildings}
+                  roads={game.boardSetup.roads}
+                  robberPosition={game.boardSetup.robberPosition}
+                  playerColors={playerColors}
+                  size={60}
+                />
               </CardContent>
             </Card>
           </div>
