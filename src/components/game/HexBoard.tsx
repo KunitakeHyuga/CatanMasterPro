@@ -216,7 +216,8 @@ interface HexBoardProps {
   highlightEdges?: Edge[];
 }
 
-export const HexBoard: React.FC<HexBoardProps> = ({
+// svg を他コンポーネントから参照するため forwardRef を利用
+export const HexBoard = React.forwardRef<SVGSVGElement, HexBoardProps>(({
   hexes,
   harbors = [],
   buildings = [],
@@ -231,7 +232,7 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   isInteractive = false,
   highlightVertices = [],
   highlightEdges = [],
-}) => {
+}, ref) => {
   const getHexPosition = React.useCallback((col: number, row: number) => ({
     x: col * (size * Math.sqrt(3)),
     y: row * (size * 1.5),
@@ -251,6 +252,7 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   return (
     <div className={`relative ${className}`}>
       <svg
+        ref={ref}
         width={boardWidth}
         height={boardHeight}
         className="border rounded-lg bg-blue-50"
@@ -386,4 +388,4 @@ export const HexBoard: React.FC<HexBoardProps> = ({
       </svg>
     </div>
   );
-};
+});
