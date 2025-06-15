@@ -236,6 +236,7 @@ export const GameDetails: React.FC = () => {
                   roads={game.boardSetup.roads}
                   robberPosition={game.boardSetup.robberPosition}
                   playerColors={playerColors}
+                  size={60}
                 />
               </CardContent>
             </Card>
