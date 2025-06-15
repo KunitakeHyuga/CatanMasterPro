@@ -103,9 +103,9 @@ const Hex: React.FC<HexProps> = ({
         </>
       )}
       
-      {/* 盗賊 */}
+      {/* 盗賊 - 視認性向上のため少し上に配置 */}
       {hasRobber && hex.type !== 'ocean' && (
-        <circle cx={0} cy={-20} r={8} fill="#000000" stroke="#ffffff" strokeWidth={2} className="pointer-events-none" />
+        <circle cx={0} cy={-30} r={8} fill="#000000" stroke="#ffffff" strokeWidth={2} className="pointer-events-none" />
       )}
       
       {/* 道路 */}
