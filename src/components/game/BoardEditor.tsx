@@ -20,6 +20,33 @@ const getHexPosition = (col: number, row: number, size: number) => ({
   y: row * (size * 1.5),
 });
 
+const verticesEqual = (a: Vertex, b: Vertex, tol = 5) =>
+  Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
+
+const getAdjacentVertices = (
+  vertex: Vertex,
+  hexes: HexTile[],
+  size: number
+) => {
+  const adjacent: Vertex[] = [];
+  hexes.forEach((hex) => {
+    const pos = getHexPosition(hex.position.x, hex.position.y, size);
+    const verts = computeVertices(size);
+    verts.forEach((v, i) => {
+      const globalV = { x: pos.x + v.x, y: pos.y + v.y };
+      if (verticesEqual(globalV, vertex, 5)) {
+        const prev = verts[(i + 5) % 6];
+        const next = verts[(i + 1) % 6];
+        adjacent.push(
+          { x: pos.x + prev.x, y: pos.y + prev.y },
+          { x: pos.x + next.x, y: pos.y + next.y }
+        );
+      }
+    });
+  });
+  return adjacent;
+};
+
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
 const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'any'];
 const numberTokens = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12];
@@ -75,48 +102,82 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
     }
   }, [selectedTool, selectedResource, selectedNumber]);
 
-  const handleVertexClick = useCallback((vertex: Vertex) => {
-    if (selectedTool === 'building' && selectedPlayer) {
-      const existingBuilding = buildings.find(b => 
-        Math.abs(b.position.x - vertex.x) < 5 && Math.abs(b.position.y - vertex.y) < 5
-      );
-      
-      if (existingBuilding) {
-        // Remove existing building
-        setBuildings(prev => prev.filter(b => b !== existingBuilding));
-      } else {
-        // Add new building
-        const newBuilding: Building = {
-          type: selectedBuildingType,
-          position: vertex,
-          playerId: selectedPlayer
-        };
-        setBuildings(prev => [...prev, newBuilding]);
-      }
-    }
-  }, [selectedTool, selectedPlayer, selectedBuildingType, buildings]);
+  const handleVertexClick = useCallback(
+    (vertex: Vertex) => {
+      if (selectedTool === 'building' && selectedPlayer) {
+        const existingBuilding = buildings.find((b) =>
+          verticesEqual(b.position, vertex)
+        );
 
-  const handleEdgeClick = useCallback((edge: Edge) => {
-    if (selectedTool === 'road' && selectedPlayer) {
-      const existingRoad = roads.find(r =>
-        (Math.abs(r.position.from.x - edge.from.x) < 5 && Math.abs(r.position.from.y - edge.from.y) < 5 &&
-         Math.abs(r.position.to.x - edge.to.x) < 5 && Math.abs(r.position.to.y - edge.to.y) < 5) ||
-        (Math.abs(r.position.from.x - edge.to.x) < 5 && Math.abs(r.position.from.y - edge.to.y) < 5 &&
-         Math.abs(r.position.to.x - edge.from.x) < 5 && Math.abs(r.position.to.y - edge.from.y) < 5)
-      );
-      
-      if (existingRoad) {
-        // Remove existing road
-        setRoads(prev => prev.filter(r => r !== existingRoad));
-      } else {
-        // Add new road
-        const newRoad: Road = {
-          position: edge,
-          playerId: selectedPlayer
-        };
-        setRoads(prev => [...prev, newRoad]);
+        if (existingBuilding) {
+          // Remove existing building
+          setBuildings((prev) => prev.filter((b) => b !== existingBuilding));
+        } else {
+          const adjacent = getAdjacentVertices(vertex, hexTiles, 60);
+          const blocked = buildings.some((b) =>
+            adjacent.some((v) => verticesEqual(b.position, v))
+          );
+          if (blocked) return;
+
+          const hasOwnRoad = roads.some(
+            (r) =>
+              r.playerId === selectedPlayer &&
+              (verticesEqual(r.position.from, vertex) ||
+                verticesEqual(r.position.to, vertex))
+          );
+          if (!hasOwnRoad) return;
+
+          const newBuilding: Building = {
+            type: selectedBuildingType,
+            position: vertex,
+            playerId: selectedPlayer,
+          };
+          setBuildings((prev) => [...prev, newBuilding]);
+        }
       }
-    }
+    },
+    [selectedTool, selectedPlayer, selectedBuildingType, buildings, hexTiles, roads]
+  );
+
+  const handleEdgeClick = useCallback(
+    (edge: Edge) => {
+      if (selectedTool === 'road' && selectedPlayer) {
+        const existingRoad = roads.find(
+          (r) =>
+            (verticesEqual(r.position.from, edge.from) &&
+              verticesEqual(r.position.to, edge.to)) ||
+            (verticesEqual(r.position.from, edge.to) &&
+              verticesEqual(r.position.to, edge.from))
+        );
+
+        if (existingRoad) {
+          // Remove existing road
+          setRoads((prev) => prev.filter((r) => r !== existingRoad));
+        } else {
+          const connectedBuilding = buildings.some(
+            (b) =>
+              b.playerId === selectedPlayer &&
+              (verticesEqual(b.position, edge.from) ||
+                verticesEqual(b.position, edge.to))
+          );
+          const connectedRoad = roads.some(
+            (r) =>
+              r.playerId === selectedPlayer &&
+              (verticesEqual(r.position.from, edge.from) ||
+                verticesEqual(r.position.to, edge.from) ||
+                verticesEqual(r.position.from, edge.to) ||
+                verticesEqual(r.position.to, edge.to))
+          );
+
+          if (!connectedBuilding && !connectedRoad) return;
+
+          const newRoad: Road = {
+            position: edge,
+            playerId: selectedPlayer,
+          };
+          setRoads((prev) => [...prev, newRoad]);
+        }
+      }
     if (selectedTool === 'harbor') {
       const size = 60;
       const tolerance = 5;
@@ -180,7 +241,7 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         ]);
       }
     }
-  }, [selectedTool, selectedPlayer, roads, harbors, selectedHarbor, hexTiles]);
+  }, [selectedTool, selectedPlayer, roads, buildings, harbors, selectedHarbor, hexTiles]);
 
   const randomizeBoard = () => {
     const landTiles = hexTiles.filter(h => h.type !== 'ocean');
