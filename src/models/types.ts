@@ -65,7 +65,6 @@ export interface BuildingCount {
   roads: number;
   settlements: number;
   cities: number;
-  devCards: number;
 }
 
 export interface DevelopmentCard {

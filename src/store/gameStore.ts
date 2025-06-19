@@ -14,7 +14,6 @@ import {
   DevelopmentCardType,
   VictoryPointCardType,
   DiceRoll,
-  GameState as GameStateType,
   ResourceCount
 } from '../models/types';
 
@@ -61,6 +60,8 @@ interface GameState {
   
   // 自動計算のトリガー
   calculatePlayerPoints: (playerId: string) => number;
+  // 全プレイヤーの得点を再計算する
+  recalculateAllPlayerPoints: () => void;
   updateLongestRoad: () => void;
   updateLargestArmy: () => void;
   
@@ -403,6 +404,19 @@ export const useGameStore = create<GameState>()(
         return points;
       },
 
+      recalculateAllPlayerPoints: () => {
+        const { currentGame } = get();
+        if (!currentGame) return;
+
+        // 各プレイヤーの総得点を最新化
+        const updatedPlayers = currentGame.players.map(p => ({
+          ...p,
+          totalPoints: get().calculatePlayerPoints(p.id)
+        }));
+
+        get().updateCurrentGame({ players: updatedPlayers });
+      },
+
       updateLargestArmy: () => {
         const { currentGame } = get();
         if (!currentGame) return;
@@ -434,6 +448,9 @@ export const useGameStore = create<GameState>()(
             };
           })
         });
+
+        // 保持者更新後に全員の得点を再計算
+        get().recalculateAllPlayerPoints();
       },
 
       updateLongestRoad: () => {
@@ -444,6 +461,8 @@ export const useGameStore = create<GameState>()(
 
         // TODO: 実際の最長道路計算を実装する
         // 道路を連結して探索する複雑な処理が必要
+
+        // 最長道路更新時も recalculateAllPlayerPoints を使う想定
       },
 
       updatePlayerResources: (playerId, resources) => {
