@@ -377,7 +377,7 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
           </CardContent>
         </Card>
 
-        {/* 発展カード管理テーブル */}
+        {/* プレイヤー管理テーブル */}
         {gamePlayers.length > 0 && (
           <DevelopmentCardTableEditor
             players={gamePlayers}

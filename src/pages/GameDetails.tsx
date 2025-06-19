@@ -9,9 +9,10 @@ import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { HexBoard } from '../components/game/HexBoard';
 import { BoardEditor } from '../components/game/BoardEditor';
+import { DevelopmentCardTableEditor } from '../components/game/DevelopmentCardTableEditor';
 import { format } from 'date-fns';
 import { useGameStore } from '../store/gameStore';
-import { BoardSetup } from '../models/types';
+import { BoardSetup, GamePlayer } from '../models/types';
 import { 
   ArrowLeft,
   Edit,
@@ -55,16 +56,16 @@ export const GameDetails: React.FC = () => {
   // ボードエディタ表示状態
   const [showBoardEditor, setShowBoardEditor] = useState(false);
 
+  // プレイヤー情報をローカルで管理
+  const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>(game.players);
+
   // プレイヤーIDと色の対応表を作成
   const playerColors = React.useMemo(() => {
-    return game.players.reduce((acc, p) => {
+    return gamePlayers.reduce((acc, p) => {
       acc[p.id] = p.color;
       return acc;
     }, {} as Record<string, string>);
-  }, [game.players]);
-  
-  // Sort players by rank
-  const rankedPlayers = [...game.players].sort((a, b) => a.rank - b.rank);
+  }, [gamePlayers]);
 
   // HexBoard の参照を保持し画像として保存できるようにする
   const boardRef = useRef<SVGSVGElement>(null);
@@ -73,6 +74,12 @@ export const GameDetails: React.FC = () => {
   const handleBoardSave = (board: BoardSetup) => {
     updateGame(game.id, { boardSetup: board });
     setShowBoardEditor(false);
+  };
+
+  // プレイヤー変更時にストアを更新
+  const handlePlayersChange = (players: GamePlayer[]) => {
+    setGamePlayers(players);
+    updateGame(game.id, { players });
   };
 
   if (showBoardEditor) {
@@ -95,7 +102,7 @@ export const GameDetails: React.FC = () => {
         <LayoutContent>
           <BoardEditor
             initialBoard={game.boardSetup}
-            gamePlayers={game.players}
+            gamePlayers={gamePlayers}
             onSave={handleBoardSave}
             onCancel={() => setShowBoardEditor(false)}
           />
@@ -213,15 +220,15 @@ export const GameDetails: React.FC = () => {
                     <div>
                       <p className="text-sm text-gray-500">Winner</p>
                       <div className="flex items-center">
-                        <p className="font-medium">
-                          {game.players.find(p => p.playerId === game.winner)?.name}
-                        </p>
-                        <div 
-                          className="ml-2 h-3 w-3 rounded-full" 
-                          style={{ 
-                            backgroundColor: game.players.find(p => p.playerId === game.winner)?.color 
-                          }}
-                        />
+                      <p className="font-medium">
+                        {gamePlayers.find(p => p.playerId === game.winner)?.name}
+                      </p>
+                      <div
+                        className="ml-2 h-3 w-3 rounded-full"
+                        style={{
+                          backgroundColor: gamePlayers.find(p => p.playerId === game.winner)?.color
+                        }}
+                      />
                       </div>
                     </div>
                   </div>
@@ -294,46 +301,11 @@ export const GameDetails: React.FC = () => {
           </div>
           
           <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Players</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {rankedPlayers.map((player, index) => (
-                    <div 
-                      key={player.id} 
-                      className={`flex items-center justify-between p-3 rounded-md ${
-                        index === 0 ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <div 
-                          className="h-6 w-6 rounded-full mr-3" 
-                          style={{ backgroundColor: player.color }}
-                        />
-                        <div>
-                          <p className="font-medium">{player.name}</p>
-                          <p className="text-sm text-gray-500">
-                            Rank: {player.rank}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold">
-                          {player.score} {player.score === 1 ? 'point' : 'points'}
-                        </p>
-                        {index === 0 && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-                            Winner
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <DevelopmentCardTableEditor
+              players={gamePlayers}
+              onChange={handlePlayersChange}
+              showAddPlayer
+            />
           </div>
         </div>
       </LayoutContent>
