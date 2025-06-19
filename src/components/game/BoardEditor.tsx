@@ -206,9 +206,6 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
         const existingBuilding = buildings.find((b) =>
           verticesEqual(b.position, vertex)
         );
-        const existingBuilding = buildings.find((b) =>
-          verticesEqual(b.position, vertex)
-        );
 
         if (existingBuilding) {
           // Remove existing building
