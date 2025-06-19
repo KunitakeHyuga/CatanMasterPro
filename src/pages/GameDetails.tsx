@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Layout, 
@@ -8,8 +8,10 @@ import {
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { HexBoard } from '../components/game/HexBoard';
+import { BoardEditor } from '../components/game/BoardEditor';
 import { format } from 'date-fns';
 import { useGameStore } from '../store/gameStore';
+import { BoardSetup } from '../models/types';
 import { 
   ArrowLeft,
   Edit,
@@ -17,13 +19,14 @@ import {
   Clock,
   Trophy,
   CalendarDays,
-  Download
+  Download,
+  Settings
 } from 'lucide-react';
 
 export const GameDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { games, removeGame } = useGameStore();
+  const { games, removeGame, updateGame } = useGameStore();
   
   const game = games.find(g => g.id === id);
   
@@ -49,6 +52,9 @@ export const GameDetails: React.FC = () => {
     }
   };
 
+  // ボードエディタ表示状態
+  const [showBoardEditor, setShowBoardEditor] = useState(false);
+
   // プレイヤーIDと色の対応表を作成
   const playerColors = React.useMemo(() => {
     return game.players.reduce((acc, p) => {
@@ -62,6 +68,41 @@ export const GameDetails: React.FC = () => {
 
   // HexBoard の参照を保持し画像として保存できるようにする
   const boardRef = useRef<SVGSVGElement>(null);
+
+  // ボード編集完了時にゲームデータを更新する
+  const handleBoardSave = (board: BoardSetup) => {
+    updateGame(game.id, { boardSetup: board });
+    setShowBoardEditor(false);
+  };
+
+  if (showBoardEditor) {
+    return (
+      <Layout>
+        <LayoutHeader>
+          <div className="flex items-center space-x-2 mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowBoardEditor(false)}
+              icon={<ArrowLeft size={16} />}
+            >
+              Back to Game
+            </Button>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Edit Board</h1>
+        </LayoutHeader>
+
+        <LayoutContent>
+          <BoardEditor
+            initialBoard={game.boardSetup}
+            gamePlayers={game.players}
+            onSave={handleBoardSave}
+            onCancel={() => setShowBoardEditor(false)}
+          />
+        </LayoutContent>
+      </Layout>
+    );
+  }
 
   // export 処理で text 要素のスタイルを保持するためのヘルパー
   const inlineTextStyles = (svg: SVGSVGElement) => {
@@ -218,14 +259,24 @@ export const GameDetails: React.FC = () => {
             <Card>
               <CardHeader className="flex items-center justify-between">
                 <CardTitle>Board Setup</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportBoard}
-                  icon={<Download size={16} />}
-                >
-                  Export
-                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportBoard}
+                    icon={<Download size={16} />}
+                  >
+                    Export
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBoardEditor(true)}
+                    icon={<Settings size={16} />}
+                  >
+                    Edit Board
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="flex justify-center">
                 <HexBoard
