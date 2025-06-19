@@ -57,7 +57,18 @@ export const GameDetails: React.FC = () => {
   const [showBoardEditor, setShowBoardEditor] = useState(false);
 
   // プレイヤー情報をローカルで管理
-  const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>(game.players);
+  const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>(
+    game.players.map(p => ({
+      resources: p.resources ?? { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
+      developmentCards: p.developmentCards ?? [],
+      knightsPlayed: p.knightsPlayed ?? 0,
+      longestRoadLength: p.longestRoadLength ?? 0,
+      hasLongestRoad: p.hasLongestRoad ?? false,
+      hasLargestArmy: p.hasLargestArmy ?? false,
+      totalPoints: p.totalPoints ?? 0,
+      ...p
+    }))
+  );
 
   // プレイヤーIDと色の対応表を作成
   const playerColors = React.useMemo(() => {

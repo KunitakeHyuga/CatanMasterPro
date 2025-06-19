@@ -46,14 +46,14 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
 
   // プレイヤーのカード枚数を取得
   const getCardCount = (player: GamePlayer, type: DevelopmentCardType): number => {
-    return player.developmentCards.filter(card => card.type === type).length;
+    const cards = player.developmentCards ?? [];
+    return cards.filter(card => card.type === type).length;
   };
 
   // 使用済み騎士カードの枚数を取得
   const getPlayedKnights = (player: GamePlayer): number => {
-    return player.developmentCards.filter(
-      card => card.type === 'knight' && card.isPlayed
-    ).length;
+    const cards = player.developmentCards ?? [];
+    return cards.filter(card => card.type === 'knight' && card.isPlayed).length;
   };
 
   // カードを追加
@@ -69,7 +69,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
       victoryPointValue: type === 'victory_point' ? 1 : undefined
     };
 
-    const updatedCards = [...player.developmentCards, newCard];
+    const updatedCards = [...(player.developmentCards ?? []), newCard];
     updatePlayerDevelopmentCards(playerId, updatedCards);
   };
 
@@ -78,7 +78,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     const player = players.find(p => p.id === playerId);
     if (!player) return;
 
-    const cards = [...player.developmentCards];
+    const cards = [...(player.developmentCards ?? [])];
     const lastIndex = cards.map(c => c.type).lastIndexOf(type);
     if (lastIndex !== -1) {
       cards.splice(lastIndex, 1);
@@ -91,12 +91,12 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     const player = players.find(p => p.id === playerId);
     if (!player) return;
 
-    const knightCards = player.developmentCards.filter(card => card.type === 'knight');
+    const knightCards = (player.developmentCards ?? []).filter(card => card.type === 'knight');
     
     if (increase) {
       const unusedKnight = knightCards.find(card => !card.isPlayed);
       if (unusedKnight) {
-        const updatedCards = player.developmentCards.map(card =>
+        const updatedCards = (player.developmentCards ?? []).map(card =>
           card.id === unusedKnight.id ? { ...card, isPlayed: true } : card
         );
         updatePlayerDevelopmentCards(playerId, updatedCards);
@@ -104,7 +104,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     } else {
       const usedKnight = knightCards.find(card => card.isPlayed);
       if (usedKnight) {
-        const updatedCards = player.developmentCards.map(card =>
+        const updatedCards = (player.developmentCards ?? []).map(card =>
           card.id === usedKnight.id ? { ...card, isPlayed: false } : card
         );
         updatePlayerDevelopmentCards(playerId, updatedCards);
@@ -342,7 +342,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
             <div className="text-center">
               <div className="text-gray-500">総発展カード</div>
               <div className="font-bold text-lg">
-                {players.reduce((sum, p) => sum + p.developmentCards.length, 0)}
+                {players.reduce((sum, p) => sum + (p.developmentCards ?? []).length, 0)}
               </div>
             </div>
             <div className="text-center">
