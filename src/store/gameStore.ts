@@ -15,7 +15,9 @@ import {
   VictoryPointCardType,
   DiceRoll,
   GameState as GameStateType,
-  ResourceCount
+  ResourceCount,
+  Vertex,
+  Road
 } from '../models/types';
 
 interface GameState {
@@ -437,13 +439,46 @@ export const useGameStore = create<GameState>()(
       },
 
       updateLongestRoad: () => {
-        // 最長道路算出処理を入れる予定
-        // 現状は仮実装
+        // ボード上の道路から各プレイヤーの最長連続路を計算する
         const { currentGame } = get();
         if (!currentGame) return;
 
-        // TODO: 実際の最長道路計算を実装する
-        // 道路を連結して探索する複雑な処理が必要
+        // 各プレイヤーごとの道路一覧を作成
+        const playerRoadData = currentGame.players.map(player => {
+          const roads = currentGame.boardSetup.roads.filter(r => r.playerId === player.id);
+          return { id: player.id, roads };
+        });
+
+        // 各プレイヤーの最長路長を算出
+        const roadLengths = playerRoadData.map(data => ({
+          id: data.id,
+          length: calculateLongestRoadLength(data.roads)
+        }));
+
+        const maxLength = Math.max(...roadLengths.map(r => r.length), 0);
+        const candidates = roadLengths.filter(r => r.length === maxLength && r.length >= 5);
+        const currentHolder = currentGame.players.find(p => p.hasLongestRoad);
+
+        // 保持者の決定と各プレイヤー情報の更新
+        const updatedPlayers = currentGame.players.map(player => {
+          const lengthInfo = roadLengths.find(r => r.id === player.id);
+          const hasLongest = candidates.length === 1
+            ? candidates[0].id === player.id
+            : candidates.some(c => c.id === player.id) && currentHolder?.id === player.id;
+          return {
+            ...player,
+            longestRoadLength: lengthInfo?.length || 0,
+            hasLongestRoad: hasLongest
+          };
+        });
+
+        // ストアを更新してから得点を再計算
+        get().updateCurrentGame({ players: updatedPlayers });
+        const recalculated = get().currentGame!.players.map(p => ({
+          ...p,
+          totalPoints: get().calculatePlayerPoints(p.id)
+        }));
+        get().updateCurrentGame({ players: recalculated });
       },
 
       updatePlayerResources: (playerId, resources) => {
@@ -672,4 +707,38 @@ function getCardName(type: DevelopmentCardType): string {
     case 'victory_point': return '勝利点';
     default: return 'Unknown';
   }
+}
+
+// 与えられた道路集合から最長連続路の長さを計算する
+function calculateLongestRoadLength(roads: Road[]): number {
+  // 頂点を文字列化して扱いやすくする
+  const key = (v: Vertex) => `${v.x},${v.y}`;
+
+  // 隣接リストの構築
+  const adjacency: Record<string, { to: string; edgeIndex: number }[]> = {};
+  roads.forEach((r, idx) => {
+    const a = key(r.position.from);
+    const b = key(r.position.to);
+    if (!adjacency[a]) adjacency[a] = [];
+    if (!adjacency[b]) adjacency[b] = [];
+    adjacency[a].push({ to: b, edgeIndex: idx });
+    adjacency[b].push({ to: a, edgeIndex: idx });
+  });
+
+  const used = new Set<number>();
+  const dfs = (vertex: string): number => {
+    let longest = 0;
+    for (const { to, edgeIndex } of adjacency[vertex] || []) {
+      if (used.has(edgeIndex)) continue;
+      used.add(edgeIndex);
+      longest = Math.max(longest, 1 + dfs(to));
+      used.delete(edgeIndex);
+    }
+    return longest;
+  };
+
+  return Math.max(
+    0,
+    ...Object.keys(adjacency).map(v => dfs(v))
+  );
 }
