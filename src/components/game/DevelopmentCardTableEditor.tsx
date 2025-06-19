@@ -1,28 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import {
   GamePlayer,
   DevelopmentCard,
-  DevelopmentCardType
+  DevelopmentCardType,
+  PlayerColor,
+  Player
 } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
-import { Scroll, Sword, Trophy, Route, Coins, Building, Plus, Minus, Shield, Crown } from 'lucide-react';
+import { PlayerSelector } from './PlayerSelector';
+import { Scroll, Sword, Trophy, Route, Coins, Building, Plus, Minus, Shield, Crown, UserPlus } from 'lucide-react';
 
 interface DevelopmentCardTableEditorProps {
   players: GamePlayer[];
   onChange?: (players: GamePlayer[]) => void;
+  showAddPlayer?: boolean;
 }
 
 export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProps> = ({
   players,
-  onChange
+  onChange,
+  showAddPlayer = false
 }) => {
   const { updatePlayerDevelopmentCards } = useGameStore();
 
-  const cardTypes: { 
-    type: DevelopmentCardType; 
-    label: string; 
+  const cardTypes: {
+    type: DevelopmentCardType;
+    label: string;
     icon: JSX.Element;
     color: string;
   }[] = [
@@ -33,16 +38,22 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     { type: 'monopoly', label: '独占', icon: <Building size={14} />, color: 'text-purple-600' }
   ];
 
+  // 追加可能な色の一覧
+  const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 'brown'];
+
+  // プレイヤー選択ダイアログ表示状態
+  const [showPlayerSelector, setShowPlayerSelector] = useState(false);
+
   // プレイヤーのカード枚数を取得
   const getCardCount = (player: GamePlayer, type: DevelopmentCardType): number => {
-    return player.developmentCards.filter(card => card.type === type).length;
+    const cards = player.developmentCards ?? [];
+    return cards.filter(card => card.type === type).length;
   };
 
   // 使用済み騎士カードの枚数を取得
   const getPlayedKnights = (player: GamePlayer): number => {
-    return player.developmentCards.filter(
-      card => card.type === 'knight' && card.isPlayed
-    ).length;
+    const cards = player.developmentCards ?? [];
+    return cards.filter(card => card.type === 'knight' && card.isPlayed).length;
   };
 
   // カードを追加
@@ -58,7 +69,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
       victoryPointValue: type === 'victory_point' ? 1 : undefined
     };
 
-    const updatedCards = [...player.developmentCards, newCard];
+    const updatedCards = [...(player.developmentCards ?? []), newCard];
     updatePlayerDevelopmentCards(playerId, updatedCards);
   };
 
@@ -67,7 +78,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     const player = players.find(p => p.id === playerId);
     if (!player) return;
 
-    const cards = [...player.developmentCards];
+    const cards = [...(player.developmentCards ?? [])];
     const lastIndex = cards.map(c => c.type).lastIndexOf(type);
     if (lastIndex !== -1) {
       cards.splice(lastIndex, 1);
@@ -80,12 +91,12 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     const player = players.find(p => p.id === playerId);
     if (!player) return;
 
-    const knightCards = player.developmentCards.filter(card => card.type === 'knight');
+    const knightCards = (player.developmentCards ?? []).filter(card => card.type === 'knight');
     
     if (increase) {
       const unusedKnight = knightCards.find(card => !card.isPlayed);
       if (unusedKnight) {
-        const updatedCards = player.developmentCards.map(card =>
+        const updatedCards = (player.developmentCards ?? []).map(card =>
           card.id === unusedKnight.id ? { ...card, isPlayed: true } : card
         );
         updatePlayerDevelopmentCards(playerId, updatedCards);
@@ -93,7 +104,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     } else {
       const usedKnight = knightCards.find(card => card.isPlayed);
       if (usedKnight) {
-        const updatedCards = player.developmentCards.map(card =>
+        const updatedCards = (player.developmentCards ?? []).map(card =>
           card.id === usedKnight.id ? { ...card, isPlayed: false } : card
         );
         updatePlayerDevelopmentCards(playerId, updatedCards);
@@ -101,13 +112,62 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     }
   };
 
+  // プレイヤー選択後の追加処理
+  const handlePlayerSelect = (player: Player) => {
+    if (!onChange) return;
+
+    const availableColors = playerColors.filter(
+      color => !players.some(p => p.color === color)
+    );
+
+    const newPlayer: GamePlayer = {
+      id: crypto.randomUUID(),
+      playerId: player.id,
+      name: player.name,
+      color: availableColors[0] || 'red',
+      score: 0,
+      rank: players.length + 1,
+      resourceProduction: { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
+      buildings: { roads: 0, settlements: 0, cities: 0, devCards: 0 },
+      resources: { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
+      developmentCards: [],
+      knightsPlayed: 0,
+      longestRoadLength: 0,
+      hasLongestRoad: false,
+      hasLargestArmy: false,
+      totalPoints: 0
+    };
+
+    onChange([...players, newPlayer]);
+  };
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center justify-between relative">
         <CardTitle className="flex items-center">
           <Scroll size={20} className="mr-2" />
-          発展カード管理
+          プレイヤー管理
         </CardTitle>
+        {showAddPlayer && onChange && (
+          <div className="relative">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowPlayerSelector(prev => !prev)}
+              icon={<UserPlus size={16} />}
+            >
+              Add Player
+            </Button>
+            {showPlayerSelector && (
+              <PlayerSelector
+                onSelect={handlePlayerSelect}
+                selectedIds={players.map(p => p.playerId)}
+                onClose={() => setShowPlayerSelector(false)}
+              />
+            )}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -282,7 +342,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
             <div className="text-center">
               <div className="text-gray-500">総発展カード</div>
               <div className="font-bold text-lg">
-                {players.reduce((sum, p) => sum + p.developmentCards.length, 0)}
+                {players.reduce((sum, p) => sum + (p.developmentCards ?? []).length, 0)}
               </div>
             </div>
             <div className="text-center">
