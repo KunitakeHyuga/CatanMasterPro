@@ -152,7 +152,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
       score: 0,
       rank: players.length + 1,
       resourceProduction: { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
-      buildings: { roads: 0, settlements: 0, cities: 0, devCards: 0 },
+      buildings: { roads: 0, settlements: 0, cities: 0 },
       resources: { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
       developmentCards: [],
       knightsPlayed: 0,
