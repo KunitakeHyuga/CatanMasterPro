@@ -57,6 +57,18 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
   };
 
   // カードを追加
+  const applyChanges = (playerId: string, cards: DevelopmentCard[]) => {
+    // ゲーム開始前でも反映できるようローカル状態も更新する
+    updatePlayerDevelopmentCards(playerId, cards);
+    if (onChange) {
+      onChange(
+        players.map(p =>
+          p.id === playerId ? { ...p, developmentCards: cards } : p
+        )
+      );
+    }
+  };
+
   const addCard = (playerId: string, type: DevelopmentCardType) => {
     const player = players.find(p => p.id === playerId);
     if (!player) return;
@@ -70,7 +82,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     };
 
     const updatedCards = [...(player.developmentCards ?? []), newCard];
-    updatePlayerDevelopmentCards(playerId, updatedCards);
+    applyChanges(playerId, updatedCards);
   };
 
   // カードを削除
@@ -82,7 +94,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     const lastIndex = cards.map(c => c.type).lastIndexOf(type);
     if (lastIndex !== -1) {
       cards.splice(lastIndex, 1);
-      updatePlayerDevelopmentCards(playerId, cards);
+      applyChanges(playerId, cards);
     }
   };
 
@@ -99,7 +111,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
         const updatedCards = (player.developmentCards ?? []).map(card =>
           card.id === unusedKnight.id ? { ...card, isPlayed: true } : card
         );
-        updatePlayerDevelopmentCards(playerId, updatedCards);
+        applyChanges(playerId, updatedCards);
       }
     } else {
       const usedKnight = knightCards.find(card => card.isPlayed);
@@ -107,7 +119,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
         const updatedCards = (player.developmentCards ?? []).map(card =>
           card.id === usedKnight.id ? { ...card, isPlayed: false } : card
         );
-        updatePlayerDevelopmentCards(playerId, updatedCards);
+        applyChanges(playerId, updatedCards);
       }
     }
   };
