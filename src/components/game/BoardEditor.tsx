@@ -60,6 +60,36 @@ const getAdjacentHexes = (
     );
   });
 
+// 指定したエッジに隣接するヘクスタイルを取得
+const getEdgeAdjacentHexes = (
+  edge: Edge,
+  hexes: HexTile[],
+  size: number
+) => {
+  const tolerance = 5;
+  return hexes.filter((hex) => {
+    const pos = getHexPosition(hex.position.x, hex.position.y, size);
+    const verts = computeVertices(size);
+    return verts.some((v, i) => {
+      const from = { x: pos.x + v.x, y: pos.y + v.y };
+      const to = {
+        x: pos.x + verts[(i + 1) % 6].x,
+        y: pos.y + verts[(i + 1) % 6].y,
+      };
+      return (
+        (Math.abs(from.x - edge.from.x) < tolerance &&
+          Math.abs(from.y - edge.from.y) < tolerance &&
+          Math.abs(to.x - edge.to.x) < tolerance &&
+          Math.abs(to.y - edge.to.y) < tolerance) ||
+        (Math.abs(from.x - edge.to.x) < tolerance &&
+          Math.abs(from.y - edge.to.y) < tolerance &&
+          Math.abs(to.x - edge.from.x) < tolerance &&
+          Math.abs(to.y - edge.from.y) < tolerance)
+      );
+    });
+  });
+};
+
 const resourceTypes: ResourceType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'ocean'];
 const harborTypes: HarborType[] = ['wood', 'brick', 'sheep', 'wheat', 'ore', 'any'];
 const numberTokens = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12];
@@ -162,6 +192,9 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
           (verticesEqual(r.position.from, e.to) && verticesEqual(r.position.to, e.from))
       );
       if (exists) return false;
+      const adjHexes = getEdgeAdjacentHexes(e, hexTiles, 60);
+      // 両方が海タイルの場合は道路を置けない
+      if (!adjHexes.some(h => h.type !== 'ocean')) return false;
       const connectedBuilding = buildings.some(
         (b) =>
           b.playerId === selectedPlayer &&
@@ -265,6 +298,9 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
           // Remove existing road
           setRoads((prev) => prev.filter((r) => r !== existingRoad));
         } else {
+          const adjHexes = getEdgeAdjacentHexes(edge, hexTiles, 60);
+          // 両方が海タイルの場合は設置不可
+          if (!adjHexes.some(h => h.type !== 'ocean')) return;
           const connectedBuilding = buildings.some(
             (b) =>
               b.playerId === selectedPlayer &&
