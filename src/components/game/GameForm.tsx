@@ -7,10 +7,11 @@ import { HexBoard } from './HexBoard';
 import { DevelopmentCardEditor } from './DevelopmentCardEditor';
 import { Plus, Minus, UserPlus, X, Save, Settings, Grid } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { GameSession, PlayerColor, GamePlayer, BoardSetup, HexTile, ResourceType } from '../../models/types';
+import { GameSession, PlayerColor, GamePlayer, BoardSetup, HexTile, ResourceType, Player } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
 import { generateDefaultBoard } from '../../utils/board';
+import { PlayerSelector } from './PlayerSelector';
 
 const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 'brown'];
 
@@ -53,6 +54,7 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   const [showBoardEditor, setShowBoardEditor] = useState(false);
   const [showBoardTemplates, setShowBoardTemplates] = useState(false);
   const [boardName, setBoardName] = useState('');
+  const [showPlayerSelector, setShowPlayerSelector] = useState(false);
 
   const gameTypes = [
     { key: 'standard', name: 'カタンの開拓者たち (スタンダード版)', description: 'カタンシリーズの基本となるゲーム' },
@@ -67,24 +69,18 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     setBoardSetup(generateDefaultBoard(newType));
   };
 
-  const addPlayer = () => {
-    if (gamePlayers.length >= 6) return;
-    
-    const availablePlayers = players.filter(
-      player => !gamePlayers.some(gp => gp.playerId === player.id)
-    );
-    
-    if (availablePlayers.length === 0) return;
-    
-    const nextPlayer = availablePlayers[0];
+  // プレイヤー選択ダイアログから選ばれたプレイヤーを追加
+  const handlePlayerSelect = (player: Player) => {
+    if (gamePlayers.length >= 6) return; // 上限を超える追加は不可
+
     const availableColors = playerColors.filter(
       color => !gamePlayers.some(gp => gp.color === color)
     );
-    
+
     const newGamePlayer: GamePlayer = {
       id: uuidv4(),
-      playerId: nextPlayer.id,
-      name: nextPlayer.name,
+      playerId: player.id,
+      name: player.name,
       color: availableColors[0] || 'red',
       score: 0,
       rank: gamePlayers.length + 1,
@@ -98,9 +94,10 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
       hasLargestArmy: false,
       totalPoints: 0
     };
-    
+
     setGamePlayers([...gamePlayers, newGamePlayer]);
   };
+
   
   const removePlayer = (id: string) => {
     const updatedPlayers = gamePlayers.filter(player => player.id !== id);
@@ -309,18 +306,27 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between relative">
             <CardTitle>Players</CardTitle>
-            <Button 
-              type="button" 
-              onClick={addPlayer}
-              variant="secondary"
-              size="sm"
-              icon={<UserPlus size={16} />}
-              disabled={gamePlayers.length >= 6 || players.length === 0}
-            >
-              Add Player
-            </Button>
+            <div className="relative">
+              <Button
+                type="button"
+                onClick={() => setShowPlayerSelector(prev => !prev)}
+                variant="secondary"
+                size="sm"
+                icon={<UserPlus size={16} />}
+                disabled={gamePlayers.length >= 6 || players.length === 0}
+              >
+                Add Player
+              </Button>
+              {showPlayerSelector && (
+                <PlayerSelector
+                  onSelect={handlePlayerSelect}
+                  selectedIds={gamePlayers.map(p => p.playerId)}
+                  onClose={() => setShowPlayerSelector(false)}
+                />
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {gamePlayers.length === 0 ? (
