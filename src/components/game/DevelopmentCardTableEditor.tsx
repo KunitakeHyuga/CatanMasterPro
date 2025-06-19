@@ -6,7 +6,9 @@ import {
   DevelopmentCard,
   DevelopmentCardType,
   PlayerColor,
-  Player
+  Player,
+  DEVELOPMENT_CARD_LIMITS,
+  TOTAL_DEVELOPMENT_CARDS
 } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { PlayerSelector } from './PlayerSelector';
@@ -50,6 +52,10 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     return cards.filter(card => card.type === type).length;
   };
 
+  // 全プレイヤー合計のカード枚数を取得
+  const getTotalCardCount = (type: DevelopmentCardType): number =>
+    players.reduce((sum, p) => sum + getCardCount(p, type), 0);
+
   // 使用済み騎士カードの枚数を取得
   const getPlayedKnights = (player: GamePlayer): number => {
     const cards = player.developmentCards ?? [];
@@ -72,6 +78,12 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
   const addCard = (playerId: string, type: DevelopmentCardType) => {
     const player = players.find(p => p.id === playerId);
     if (!player) return;
+
+    // 上限を超える場合は追加しない
+    if (getTotalCardCount(type) >= DEVELOPMENT_CARD_LIMITS[type]) {
+      alert('これ以上この種類のカードは追加できません');
+      return;
+    }
 
     const newCard: DevelopmentCard = {
       id: crypto.randomUUID(),
@@ -249,6 +261,8 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
                     {/* 各カード種類の枚数 */}
                     {cardTypes.map(cardType => {
                       const count = getCardCount(player, cardType.type);
+                      const total = getTotalCardCount(cardType.type);
+                      const disabledAdd = total >= DEVELOPMENT_CARD_LIMITS[cardType.type];
                       return (
                         <td key={cardType.type} className="p-3 text-center">
                           <div className="flex items-center justify-center space-x-1">
@@ -269,6 +283,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
                               size="sm"
                               variant="ghost"
                               onClick={() => addCard(player.id, cardType.type)}
+                              disabled={disabledAdd}
                               icon={<Plus size={12} />}
                               className="h-6 w-6 p-0"
                             />
@@ -355,12 +370,14 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
               <div className="text-gray-500">総発展カード</div>
               <div className="font-bold text-lg">
                 {players.reduce((sum, p) => sum + (p.developmentCards ?? []).length, 0)}
+                / {TOTAL_DEVELOPMENT_CARDS}
               </div>
             </div>
             <div className="text-center">
               <div className="text-gray-500">総騎士カード</div>
               <div className="font-bold text-lg text-red-600">
                 {players.reduce((sum, p) => sum + getCardCount(p, 'knight'), 0)}
+                / {DEVELOPMENT_CARD_LIMITS['knight']}
               </div>
             </div>
             <div className="text-center">
@@ -373,6 +390,7 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
               <div className="text-gray-500">勝利点カード</div>
               <div className="font-bold text-lg text-amber-600">
                 {players.reduce((sum, p) => sum + getCardCount(p, 'victory_point'), 0)}
+                / {DEVELOPMENT_CARD_LIMITS['victory_point']}
               </div>
             </div>
           </div>
