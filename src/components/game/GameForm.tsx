@@ -13,8 +13,7 @@ import { createInitialDeck } from '../../utils/developmentCards';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
 import { generateDefaultBoard } from '../../utils/board';
-
-const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 'brown'];
+import { playerColors } from '../../constants/playerColors';
 
 interface GameFormProps {
   onSave: () => void;

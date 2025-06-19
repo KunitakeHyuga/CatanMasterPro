@@ -1,15 +1,16 @@
 import React from 'react';
 import { GamePlayer } from '../../models/types';
-import { 
-  Trophy, 
-  Home, 
-  Building, 
+import {
+  Trophy,
+  Home,
+  Building,
   Route,
   Sword,
   Crown,
   Shield,
   Scroll
 } from 'lucide-react';
+import { getCardCount, getPlayedKnights } from '../../utils/developmentCardUtils';
 
 interface PlayerPanelProps {
   player: GamePlayer;
@@ -40,18 +41,16 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
     return `#${rank}`;
   };
 
-  // 発展カード種類別の枚数を集計
+  // ユーティリティを利用してカード枚数を取得
   const cardCounts = {
-    knight: player.developmentCards.filter(c => c.type === 'knight').length,
-    victory_point: player.developmentCards.filter(c => c.type === 'victory_point').length,
-    road_building: player.developmentCards.filter(c => c.type === 'road_building').length,
-    year_of_plenty: player.developmentCards.filter(c => c.type === 'year_of_plenty').length,
-    monopoly: player.developmentCards.filter(c => c.type === 'monopoly').length,
+    knight: getCardCount(player, 'knight'),
+    victory_point: getCardCount(player, 'victory_point'),
+    road_building: getCardCount(player, 'road_building'),
+    year_of_plenty: getCardCount(player, 'year_of_plenty'),
+    monopoly: getCardCount(player, 'monopoly'),
   };
 
-  const playedKnights = player.developmentCards.filter(
-    c => c.type === 'knight' && c.isPlayed
-  ).length;
+  const playedKnights = getPlayedKnights(player);
 
   return (
     <div className={`p-4 rounded-lg border-2 transition-all ${

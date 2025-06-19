@@ -8,6 +8,7 @@ import {
 } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { Scroll, Sword, Trophy, Route, Coins, Building, Plus, Minus, Shield, Crown } from 'lucide-react';
+import { getCardCount, getPlayedKnights } from '../../utils/developmentCardUtils';
 
 interface DevelopmentCardTableEditorProps {
   players: GamePlayer[];
@@ -30,20 +31,8 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
     { type: 'victory_point', label: '勝利点', icon: <Trophy size={14} />, color: 'text-amber-600' },
     { type: 'road_building', label: '道路建設', icon: <Route size={14} />, color: 'text-blue-600' },
     { type: 'year_of_plenty', label: '豊作', icon: <Coins size={14} />, color: 'text-green-600' },
-    { type: 'monopoly', label: '独占', icon: <Building size={14} />, color: 'text-purple-600' }
+  { type: 'monopoly', label: '独占', icon: <Building size={14} />, color: 'text-purple-600' }
   ];
-
-  // プレイヤーのカード枚数を取得
-  const getCardCount = (player: GamePlayer, type: DevelopmentCardType): number => {
-    return player.developmentCards.filter(card => card.type === type).length;
-  };
-
-  // 使用済み騎士カードの枚数を取得
-  const getPlayedKnights = (player: GamePlayer): number => {
-    return player.developmentCards.filter(
-      card => card.type === 'knight' && card.isPlayed
-    ).length;
-  };
 
   // カードを追加
   const addCard = (playerId: string, type: DevelopmentCardType) => {

@@ -7,8 +7,7 @@ import { GamePlayer, PlayerColor } from '../../models/types';
 import { generateDefaultBoard } from '../../utils/board';
 import { Plus, Minus, Play, Users } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-
-const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange'];
+import { playerColors } from '../../constants/playerColors';
 
 export const GameSetup: React.FC = () => {
   const { players, startNewGame } = useGameStore();

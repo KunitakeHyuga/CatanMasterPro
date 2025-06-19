@@ -4,8 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card
 import { PlayerColor, Player } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { Save } from 'lucide-react';
-
-const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 'brown'];
+import { playerColors } from '../../constants/playerColors';
 
 interface PlayerFormProps {
   onSave: () => void;
