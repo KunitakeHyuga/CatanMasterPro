@@ -14,7 +14,8 @@ import {
   DevelopmentCardType,
   VictoryPointCardType,
   DiceRoll,
-  GameState as GameStateType
+  GameState as GameStateType,
+  ResourceCount
 } from '../models/types';
 
 interface GameState {
@@ -349,9 +350,30 @@ export const useGameStore = create<GameState>()(
       updatePlayerDevelopmentCards: (playerId, cards) => {
         const { currentGame } = get();
         if (!currentGame) return;
+        
+        // 発展カード更新時に騎士の使用枚数も更新
+        const playedKnights = cards.filter(c => c.type === 'knight' && c.isPlayed).length;
+        
         get().updateCurrentGame({
           players: currentGame.players.map(p =>
-            p.id === playerId ? { ...p, developmentCards: cards } : p
+            p.id === playerId 
+              ? { 
+                  ...p, 
+                  developmentCards: cards,
+                  knightsPlayed: playedKnights
+                } 
+              : p
+          )
+        });
+
+        // 最大騎士力と得点を再計算
+        get().updateLargestArmy();
+        const updatedPoints = get().calculatePlayerPoints(playerId);
+        get().updateCurrentGame({
+          players: currentGame.players.map(player =>
+            player.id === playerId
+              ? { ...player, totalPoints: updatedPoints }
+              : player
           )
         });
       },
@@ -385,17 +407,32 @@ export const useGameStore = create<GameState>()(
         const { currentGame } = get();
         if (!currentGame) return;
 
+        // 使用済み騎士カードが3枚以上のプレイヤーを取得
         const playersWithKnights = currentGame.players
-          .filter(p => p.knightsPlayed >= 3)
-          .sort((a, b) => b.knightsPlayed - a.knightsPlayed);
+          .map(p => ({
+            ...p,
+            playedKnights: p.developmentCards.filter(c => c.type === 'knight' && c.isPlayed).length
+          }))
+          .filter(p => p.playedKnights >= 3)
+          .sort((a, b) => b.playedKnights - a.playedKnights);
 
         const currentLargestArmyPlayer = playersWithKnights[0];
         
+        // 同数の場合は現在の保持者が継続
+        const hasMultipleWithSameCount = playersWithKnights.length > 1 && 
+          playersWithKnights[0].playedKnights === playersWithKnights[1].playedKnights;
+        
         get().updateCurrentGame({
-          players: currentGame.players.map(player => ({
-            ...player,
-            hasLargestArmy: currentLargestArmyPlayer?.id === player.id
-          }))
+          players: currentGame.players.map(player => {
+            if (hasMultipleWithSameCount && player.hasLargestArmy) {
+              // 同数の場合は現在の保持者が継続
+              return player;
+            }
+            return {
+              ...player,
+              hasLargestArmy: currentLargestArmyPlayer?.id === player.id
+            };
+          })
         });
       },
 
@@ -628,11 +665,11 @@ export const useGameStore = create<GameState>()(
 // カード名を取得するための補助関数
 function getCardName(type: DevelopmentCardType): string {
   switch (type) {
-    case 'knight': return 'Knight';
-    case 'road_building': return 'Road Building';
-    case 'year_of_plenty': return 'Year of Plenty';
-    case 'monopoly': return 'Monopoly';
-    case 'victory_point': return 'Victory Point';
+    case 'knight': return '騎士';
+    case 'road_building': return '道路建設';
+    case 'year_of_plenty': return '豊作';
+    case 'monopoly': return '独占';
+    case 'victory_point': return '勝利点';
     default: return 'Unknown';
   }
 }

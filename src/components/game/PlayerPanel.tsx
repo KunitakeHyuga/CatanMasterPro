@@ -7,7 +7,8 @@ import {
   Route,
   Sword,
   Crown,
-  Shield
+  Shield,
+  Scroll
 } from 'lucide-react';
 
 interface PlayerPanelProps {
@@ -38,6 +39,19 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
     if (rank === 3) return '🥉';
     return `#${rank}`;
   };
+
+  // 発展カード種類別の枚数を集計
+  const cardCounts = {
+    knight: player.developmentCards.filter(c => c.type === 'knight').length,
+    victory_point: player.developmentCards.filter(c => c.type === 'victory_point').length,
+    road_building: player.developmentCards.filter(c => c.type === 'road_building').length,
+    year_of_plenty: player.developmentCards.filter(c => c.type === 'year_of_plenty').length,
+    monopoly: player.developmentCards.filter(c => c.type === 'monopoly').length,
+  };
+
+  const playedKnights = player.developmentCards.filter(
+    c => c.type === 'knight' && c.isPlayed
+  ).length;
 
   return (
     <div className={`p-4 rounded-lg border-2 transition-all ${
@@ -108,36 +122,80 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
         </div>
       </div>
 
-      {/* Development Cards & Achievements */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-xs">
-          <span className="text-gray-500">Dev Cards:</span>
-          <span className="font-medium">{player.developmentCards.length}</span>
-        </div>
-        
-        <div className="flex justify-between text-xs">
-          <span className="text-gray-500">Knights:</span>
-          <div className="flex items-center">
-            <Sword size={12} className="mr-1" />
-            <span className="font-medium">{player.knightsPlayed}</span>
+      {/* Development Cards */}
+      <div className="mb-3">
+        <div className="text-xs font-medium text-gray-500 mb-1">Development Cards</div>
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className="text-gray-500">Total Cards:</span>
+            <span className="font-medium">{player.developmentCards.length}</span>
           </div>
+          
+          {/* 勝利点カード */}
+          {cardCounts.victory_point > 0 && (
+            <div className="flex justify-between text-xs">
+              <span className="flex items-center text-amber-600">
+                <Trophy size={12} className="mr-1" />
+                Victory Points:
+              </span>
+              <span className="font-medium text-amber-600">
+                {cardCounts.victory_point} (+{cardCounts.victory_point}pts)
+              </span>
+            </div>
+          )}
+          
+          {/* 騎士カード */}
+          {cardCounts.knight > 0 && (
+            <div className="flex justify-between text-xs">
+              <span className="flex items-center text-red-600">
+                <Sword size={12} className="mr-1" />
+                Knights:
+              </span>
+              <span className="font-medium text-red-600">
+                {cardCounts.knight} ({playedKnights} used)
+              </span>
+            </div>
+          )}
+          
+          {/* その他のカード */}
+          {(cardCounts.road_building + cardCounts.year_of_plenty + cardCounts.monopoly) > 0 && (
+            <div className="flex justify-between text-xs">
+              <span className="flex items-center text-blue-600">
+                <Scroll size={12} className="mr-1" />
+                Other Cards:
+              </span>
+              <span className="font-medium text-blue-600">
+                {cardCounts.road_building + cardCounts.year_of_plenty + cardCounts.monopoly}
+              </span>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Special Achievements */}
-        <div className="flex space-x-2 mt-2">
+      {/* Special Achievements */}
+      <div className="space-y-2">
+        <div className="flex space-x-2">
           {player.hasLargestArmy && (
             <div className="flex items-center px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
               <Shield size={12} className="mr-1" />
-              <span>Largest Army</span>
+              <span>Largest Army (+2pts)</span>
             </div>
           )}
           {player.hasLongestRoad && (
             <div className="flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
               <Route size={12} className="mr-1" />
-              <span>Longest Road</span>
+              <span>Longest Road (+2pts)</span>
             </div>
           )}
         </div>
+
+        {/* 最大騎士力候補の表示 */}
+        {playedKnights >= 3 && !player.hasLargestArmy && (
+          <div className="flex items-center px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">
+            <Sword size={12} className="mr-1" />
+            <span>Army Candidate ({playedKnights} knights)</span>
+          </div>
+        )}
 
         {/* Victory Condition */}
         {player.totalPoints >= 10 && (
