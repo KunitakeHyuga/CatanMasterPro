@@ -5,15 +5,12 @@ import { BoardEditor } from './BoardEditor';
 import { BoardTemplates } from './BoardTemplates';
 import { HexBoard } from './HexBoard';
 import { DevelopmentCardTableEditor } from './DevelopmentCardTableEditor';
-import { PlayerSelector } from './PlayerSelector';
-import { Plus, Minus, UserPlus, X, Save, Settings, Grid } from 'lucide-react';
+import { X, Save, Settings, Grid } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { GameSession, PlayerColor, GamePlayer, BoardSetup, HexTile, ResourceType, Player } from '../../models/types';
+import { GameSession, GamePlayer, BoardSetup, Player } from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
 import { generateDefaultBoard } from '../../utils/board';
-
-const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 'brown'];
 
 interface GameFormProps {
   onSave: () => void;
@@ -54,7 +51,6 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   const [showBoardEditor, setShowBoardEditor] = useState(false);
   const [showBoardTemplates, setShowBoardTemplates] = useState(false);
   const [boardName, setBoardName] = useState('');
-  const [showPlayerSelector, setShowPlayerSelector] = useState(false);
 
   const gameTypes = [
     { key: 'standard', name: 'カタンの開拓者たち (スタンダード版)', description: 'カタンシリーズの基本となるゲーム' },
@@ -69,58 +65,6 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     setBoardSetup(generateDefaultBoard(newType));
   };
 
-  // プレイヤー選択ダイアログから選ばれたプレイヤーを追加
-  const handlePlayerSelect = (player: Player) => {
-    if (gamePlayers.length >= 6) return; // 上限を超える追加は不可
-
-    const availableColors = playerColors.filter(
-      color => !gamePlayers.some(gp => gp.color === color)
-    );
-
-    const newGamePlayer: GamePlayer = {
-      id: uuidv4(),
-      playerId: player.id,
-      name: player.name,
-      color: availableColors[0] || 'red',
-      score: 0,
-      rank: gamePlayers.length + 1,
-      resourceProduction: { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
-      buildings: { roads: 0, settlements: 0, cities: 0, devCards: 0 },
-      resources: { wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 },
-      developmentCards: [],
-      knightsPlayed: 0,
-      longestRoadLength: 0,
-      hasLongestRoad: false,
-      hasLargestArmy: false,
-      totalPoints: 0
-    };
-
-    setGamePlayers([...gamePlayers, newGamePlayer]);
-  };
-
-  
-  const removePlayer = (id: string) => {
-    const updatedPlayers = gamePlayers.filter(player => player.id !== id);
-    const rankedPlayers = updatedPlayers.map((player, index) => ({
-      ...player,
-      rank: index + 1
-    }));
-    setGamePlayers(rankedPlayers);
-  };
-  
-  const updatePlayerScore = (id: string, score: number) => {
-    const updatedPlayers = gamePlayers.map(player => 
-      player.id === id ? { ...player, score } : player
-    );
-    
-    const sortedPlayers = [...updatedPlayers].sort((a, b) => b.score - a.score);
-    const rankedPlayers = sortedPlayers.map((player, index) => ({
-      ...player,
-      rank: index + 1
-    }));
-    
-    setGamePlayers(rankedPlayers);
-  };
   
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -305,83 +249,14 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
           </CardContent>
         </Card>
 
-        {/* ドロップダウンがカード外へはみ出ないよう余白を確保 */}
-        <Card className="overflow-visible">
-          <CardHeader className="flex flex-row items-center justify-between relative">
-            <CardTitle>Players</CardTitle>
-            <div className="relative">
-              <Button
-                type="button"
-                onClick={() => setShowPlayerSelector(prev => !prev)}
-                variant="secondary"
-                size="sm"
-                icon={<UserPlus size={16} />}
-                disabled={gamePlayers.length >= 6 || players.length === 0}
-              >
-                Add Player
-              </Button>
-              {showPlayerSelector && (
-                <PlayerSelector
-                  onSelect={handlePlayerSelect}
-                  selectedIds={gamePlayers.map(p => p.playerId)}
-                  onClose={() => setShowPlayerSelector(false)}
-                />
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {gamePlayers.length === 0 ? (
-              <p className="text-gray-500 text-sm italic">Add players to the game</p>
-            ) : (
-              <div className="space-y-3">
-                {gamePlayers.map((player) => (
-                  <div key={player.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                    <div className="flex items-center space-x-4">
-                      <div
-                        className="h-4 w-4 rounded-full"
-                        style={{ backgroundColor: player.color }}
-                      />
-                      <span className="font-medium">{player.name}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => updatePlayerScore(player.id, Math.max(0, player.score - 1))}
-                        icon={<Minus size={16} />}
-                      />
-                      <span className="w-8 text-center">{player.score}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => updatePlayerScore(player.id, player.score + 1)}
-                        icon={<Plus size={16} />}
-                      />
-                      <div className="text-sm text-gray-500">
-                        Rank: {player.rank}
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removePlayer(player.id)}
-                        icon={<X size={16} />}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
 
         {/* プレイヤー管理テーブル */}
         {gamePlayers.length > 0 && (
           <DevelopmentCardTableEditor
             players={gamePlayers}
             onChange={setGamePlayers}
+            showAddPlayer
           />
         )}
 
