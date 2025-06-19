@@ -101,6 +101,14 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
   const [selectedPlayer, setSelectedPlayer] = useState<string>(gamePlayers[0]?.id || '');
   const [selectedBuildingType, setSelectedBuildingType] = useState<'settlement' | 'city'>('settlement');
 
+  // プレイヤー一覧が変化した場合に初期選択状態を補正する
+  React.useEffect(() => {
+    // 選択中のプレイヤーが存在しなければ先頭のプレイヤーを自動選択
+    if (!gamePlayers.some((p) => p.id === selectedPlayer)) {
+      setSelectedPlayer(gamePlayers[0]?.id || '');
+    }
+  }, [gamePlayers, selectedPlayer]);
+
   const availableVertices = React.useMemo(() => {
     if (selectedTool !== 'building' || !selectedPlayer) return [] as Vertex[];
     const verts: Vertex[] = [];
