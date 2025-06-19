@@ -305,7 +305,8 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* ドロップダウンがカード外へはみ出ないよう余白を確保 */}
+        <Card className="overflow-visible">
           <CardHeader className="flex flex-row items-center justify-between relative">
             <CardTitle>Players</CardTitle>
             <div className="relative">

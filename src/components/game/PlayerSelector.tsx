@@ -30,7 +30,8 @@ export const PlayerSelector: React.FC<PlayerSelectorProps> = ({ onSelect, select
     : recommendedPlayers;
 
   return (
-    <Card className="absolute z-20 mt-2 w-72">
+    // ボタン直下に表示するため絶対位置を指定
+    <Card className="absolute right-0 top-full mt-2 w-72">
       <CardHeader className="flex items-center justify-between py-2 px-3">
         <CardTitle className="text-sm">Select Player</CardTitle>
         <Button type="button" variant="ghost" size="sm" onClick={onClose} icon={<X size={16} />} />
