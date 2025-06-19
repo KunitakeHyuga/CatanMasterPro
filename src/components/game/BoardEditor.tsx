@@ -197,7 +197,12 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
 
   const handleVertexClick = useCallback(
     (vertex: Vertex) => {
-      if (selectedTool === 'building' && selectedPlayer) {
+      if (selectedTool === 'building') {
+        if (!selectedPlayer) {
+          alert('プレイヤーを選択してください');
+          return;
+        }
+        
         const existingBuilding = buildings.find((b) =>
           verticesEqual(b.position, vertex)
         );
@@ -237,7 +242,12 @@ export const BoardEditor: React.FC<BoardEditorProps> = ({
 
   const handleEdgeClick = useCallback(
     (edge: Edge) => {
-      if (selectedTool === 'road' && selectedPlayer) {
+      if (selectedTool === 'road') {
+        if (!selectedPlayer) {
+          alert('プレイヤーを選択してください');
+          return;
+        }
+        
         const buildingCount = buildings.filter((b) => b.playerId === selectedPlayer).length;
         if (buildingCount === 0) {
           alert('先に家を置いてください');
