@@ -11,12 +11,25 @@ export type HarborType =
   | 'none';
 export type PlayerColor = 'red' | 'blue' | 'white' | 'orange' | 'green' | 'brown';
 
-export type DevelopmentCardType = 
-  | 'knight' 
-  | 'victory_point' 
-  | 'road_building' 
-  | 'year_of_plenty' 
+export type DevelopmentCardType =
+  | 'knight'
+  | 'victory_point'
+  | 'road_building'
+  | 'year_of_plenty'
   | 'monopoly';
+
+// ゲーム全体での発展カード枚数上限
+export const DEVELOPMENT_CARD_LIMITS: Record<DevelopmentCardType, number> = {
+  knight: 14,
+  victory_point: 5,
+  road_building: 2,
+  year_of_plenty: 2,
+  monopoly: 2
+};
+
+// 上記枚数の合計値（基本セットでは25枚）
+export const TOTAL_DEVELOPMENT_CARDS =
+  Object.values(DEVELOPMENT_CARD_LIMITS).reduce((a, b) => a + b, 0);
 
 export type VictoryPointCardType = 
   | 'university'
