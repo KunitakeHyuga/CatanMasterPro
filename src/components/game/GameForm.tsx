@@ -7,7 +7,13 @@ import { HexBoard } from './HexBoard';
 import { DevelopmentCardTableEditor } from './DevelopmentCardTableEditor';
 import { X, Save, Settings, Grid } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { GameSession, GamePlayer, BoardSetup, Player } from '../../models/types';
+import {
+  GameSession,
+  GamePlayer,
+  BoardSetup,
+  Player,
+  DevelopmentCardDeck
+} from '../../models/types';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
 import { generateDefaultBoard } from '../../utils/board';
@@ -252,13 +258,11 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
 
 
         {/* プレイヤー管理テーブル */}
-        {gamePlayers.length > 0 && (
-          <DevelopmentCardTableEditor
-            players={gamePlayers}
-            onChange={setGamePlayers}
-            showAddPlayer
-          />
-        )}
+        <DevelopmentCardTableEditor
+          players={gamePlayers}
+          onChange={setGamePlayers}
+          showAddPlayer
+        />
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
