@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
+import { createInitialDeck } from '../utils/developmentCards';
 import { 
   Player, 
   GameSession, 
@@ -79,23 +80,6 @@ interface GameState {
   };
 }
 
-// 発展カードデッキの雛形を作成
-const createVictoryPointCards = (): DevelopmentCard[] => [
-  { id: uuidv4(), type: 'victory_point', name: 'University', isPlayed: false, victoryPointValue: 1, victoryPointType: 'university' },
-  { id: uuidv4(), type: 'victory_point', name: 'Library', isPlayed: false, victoryPointValue: 1, victoryPointType: 'library' },
-  { id: uuidv4(), type: 'victory_point', name: 'Parliament', isPlayed: false, victoryPointValue: 1, victoryPointType: 'parliament' },
-  { id: uuidv4(), type: 'victory_point', name: 'Market', isPlayed: false, victoryPointValue: 1, victoryPointType: 'market' },
-  { id: uuidv4(), type: 'victory_point', name: 'Church', isPlayed: false, victoryPointValue: 1, victoryPointType: 'church' },
-];
-
-const createInitialDeck = (): DevelopmentCardDeck => ({
-  knights: 14,
-  victoryPoints: createVictoryPointCards(),
-  roadBuilding: 2,
-  yearOfPlenty: 2,
-  monopoly: 2,
-  totalRemaining: 25
-});
 
 export const useGameStore = create<GameState>()(
   persist(

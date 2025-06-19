@@ -9,6 +9,7 @@ import { PlayerSelector } from './PlayerSelector';
 import { Plus, Minus, UserPlus, X, Save, Settings, Grid } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { GameSession, PlayerColor, GamePlayer, BoardSetup, HexTile, ResourceType, Player } from '../../models/types';
+import { createInitialDeck } from '../../utils/developmentCards';
 import { useGameStore } from '../../store/gameStore';
 import { format } from 'date-fns';
 import { generateDefaultBoard } from '../../utils/board';
@@ -44,7 +45,7 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   );
 
   const [developmentCardDeck, setDevelopmentCardDeck] = useState<DevelopmentCardDeck>(
-    initialGame?.developmentCardDeck || generateDefaultDeck()
+    initialGame?.developmentCardDeck || createInitialDeck()
   );
   
   const [boardSetup, setBoardSetup] = useState<BoardSetup>(
@@ -504,19 +505,3 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     </form>
   );
 };
-
-// 山札の初期状態を生成
-export const generateDefaultDeck = (): DevelopmentCardDeck => ({
-  knights: 14,
-  victoryPoints: [
-    { id: uuidv4(), type: 'victory_point', name: 'University', isPlayed: false, victoryPointValue: 1 },
-    { id: uuidv4(), type: 'victory_point', name: 'Library', isPlayed: false, victoryPointValue: 1 },
-    { id: uuidv4(), type: 'victory_point', name: 'Parliament', isPlayed: false, victoryPointValue: 1 },
-    { id: uuidv4(), type: 'victory_point', name: 'Market', isPlayed: false, victoryPointValue: 1 },
-    { id: uuidv4(), type: 'victory_point', name: 'Church', isPlayed: false, victoryPointValue: 1 }
-  ],
-  roadBuilding: 2,
-  yearOfPlenty: 2,
-  monopoly: 2,
-  totalRemaining: 25
-});
