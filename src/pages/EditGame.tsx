@@ -49,9 +49,10 @@ export const EditGame: React.FC = () => {
       </LayoutHeader>
       
       <LayoutContent>
-        <GameForm 
-          initialGame={game} 
-          onSave={() => navigate(`/games/${id}`)} 
+        <GameForm
+          initialGame={game}
+          onSave={() => navigate(`/games/${id}`)}
+          editableBoard={false} // 既存ゲームではボード編集は不要
         />
       </LayoutContent>
     </Layout>

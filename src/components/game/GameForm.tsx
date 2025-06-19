@@ -17,9 +17,15 @@ const playerColors: PlayerColor[] = ['red', 'blue', 'white', 'orange', 'green', 
 interface GameFormProps {
   onSave: () => void;
   initialGame?: GameSession;
+  /** 編集画面ではボード編集を無効化するためのフラグ */
+  editableBoard?: boolean;
 }
 
-export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
+export const GameForm: React.FC<GameFormProps> = ({
+  onSave,
+  initialGame,
+  editableBoard = true
+}) => {
   const { players, addGame, updateGame, savedBoards, saveBoard } = useGameStore();
   
   const [date, setDate] = useState(initialGame?.date || format(new Date(), 'yyyy-MM-dd'));
@@ -50,6 +56,7 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     initialGame?.boardSetup || generateDefaultBoard(gameType)
   );
 
+  // 編集不可でも状態は保持するが、UIでは利用しない
   const [showBoardEditor, setShowBoardEditor] = useState(false);
   const [showBoardTemplates, setShowBoardTemplates] = useState(false);
   const [boardName, setBoardName] = useState('');
@@ -180,7 +187,7 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     onSave();
   };
 
-  if (showBoardEditor) {
+  if (editableBoard && showBoardEditor) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -218,7 +225,7 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
     );
   }
 
-  if (showBoardTemplates) {
+  if (editableBoard && showBoardTemplates) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -383,26 +390,28 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Board Setup</CardTitle>
-            <div className="flex space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowBoardTemplates(true)}
-                icon={<Grid size={16} />}
-              >
-                Templates
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowBoardEditor(true)}
-                icon={<Settings size={16} />}
-              >
-                Edit Board
-              </Button>
-            </div>
+            {editableBoard && (
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBoardTemplates(true)}
+                  icon={<Grid size={16} />}
+                >
+                  Templates
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBoardEditor(true)}
+                  icon={<Settings size={16} />}
+                >
+                  Edit Board
+                </Button>
+              </div>
+            )}
           </CardHeader>
         <CardContent>
           <div className="flex justify-center">
