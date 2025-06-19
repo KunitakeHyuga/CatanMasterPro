@@ -666,8 +666,8 @@ export const useGameStore = create<GameState>()(
 function getCardName(type: DevelopmentCardType): string {
   switch (type) {
     case 'knight': return '騎士';
-    case 'road_building': return '道路建設';
-    case 'year_of_plenty': return '豊作';
+    case 'road_building': return '街道建設';
+    case 'year_of_plenty': return '収穫';
     case 'monopoly': return '独占';
     case 'victory_point': return '勝利点';
     default: return 'Unknown';

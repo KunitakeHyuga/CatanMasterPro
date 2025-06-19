@@ -35,8 +35,8 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
   }[] = [
     { type: 'knight', label: '騎士', icon: <Sword size={14} />, color: 'text-red-600' },
     { type: 'victory_point', label: '勝利点', icon: <Trophy size={14} />, color: 'text-amber-600' },
-    { type: 'road_building', label: '道路建設', icon: <Route size={14} />, color: 'text-blue-600' },
-    { type: 'year_of_plenty', label: '豊作', icon: <Coins size={14} />, color: 'text-green-600' },
+    { type: 'road_building', label: '街道建設', icon: <Route size={14} />, color: 'text-blue-600' },
+    { type: 'year_of_plenty', label: '収穫', icon: <Coins size={14} />, color: 'text-green-600' },
     { type: 'monopoly', label: '独占', icon: <Building size={14} />, color: 'text-purple-600' }
   ];
 

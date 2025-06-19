@@ -31,8 +31,8 @@ export const DevelopmentCardEditor: React.FC<DevelopmentCardEditorProps> = ({
   const cardTypeOptions: { value: DevelopmentCardType; label: string; description: string }[] = [
     { value: 'knight', label: '騎士', description: '盗賊を移動し、他プレイヤーからカードを奪う' },
     { value: 'victory_point', label: '勝利点', description: '1勝利点を獲得' },
-    { value: 'road_building', label: '道路建設', description: '道路を2本まで無料で建設' },
-    { value: 'year_of_plenty', label: '豊作', description: '好きな資源を2つ獲得' },
+    { value: 'road_building', label: '街道建設', description: '道路を2本まで無料で建設' },
+    { value: 'year_of_plenty', label: '収穫', description: '好きな資源を2つ獲得' },
     { value: 'monopoly', label: '独占', description: '指定した資源を全プレイヤーから獲得' }
   ];
 
