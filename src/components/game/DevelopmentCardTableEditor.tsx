@@ -375,14 +375,14 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
             </div>
             <div className="text-center">
               <div className="text-gray-500">総騎士カード</div>
-              <div className="font-bold text-lg text-red-600">
+              <div className="font-bold text-lg text-black">
                 {players.reduce((sum, p) => sum + getCardCount(p, 'knight'), 0)}
                 / {DEVELOPMENT_CARD_LIMITS['knight']}
               </div>
             </div>
             <div className="text-center">
               <div className="text-gray-500">使用済み騎士</div>
-              <div className="font-bold text-lg text-red-600">
+              <div className="font-bold text-lg text-black">
                 {players.reduce((sum, p) => sum + getPlayedKnights(p), 0)} /
                 {players.reduce((sum, p) => sum + getCardCount(p, 'knight'), 0)}
               </div>
