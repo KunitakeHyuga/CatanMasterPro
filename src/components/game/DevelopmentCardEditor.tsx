@@ -159,7 +159,7 @@ export const DevelopmentCardEditor: React.FC<DevelopmentCardEditorProps> = ({
                       icon={<Minus size={12} />}
                     />
                     <span className="w-8 text-center text-sm font-medium text-red-600">
-                      {playedKnights}
+                      {playedKnights}/{cardCounts.knight}
                     </span>
                     <Button
                       type="button"
