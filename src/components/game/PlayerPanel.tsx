@@ -152,7 +152,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                 Knights:
               </span>
               <span className="font-medium text-red-600">
-                {cardCounts.knight} ({playedKnights} used)
+                {playedKnights}/{cardCounts.knight}
               </span>
             </div>
           )}

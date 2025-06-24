@@ -304,8 +304,8 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
                           icon={<Minus size={12} />}
                           className="h-6 w-6 p-0"
                         />
-                        <span className="w-6 text-center font-medium text-sm text-red-600">
-                          {playedKnights}
+                        <span className="w-10 text-center font-medium text-sm text-red-600">
+                          {playedKnights}/{totalKnights}
                         </span>
                         <Button
                           type="button"
@@ -383,7 +383,8 @@ export const DevelopmentCardTableEditor: React.FC<DevelopmentCardTableEditorProp
             <div className="text-center">
               <div className="text-gray-500">使用済み騎士</div>
               <div className="font-bold text-lg text-red-600">
-                {players.reduce((sum, p) => sum + getPlayedKnights(p), 0)}
+                {players.reduce((sum, p) => sum + getPlayedKnights(p), 0)} /
+                {players.reduce((sum, p) => sum + getCardCount(p, 'knight'), 0)}
               </div>
             </div>
             <div className="text-center">
