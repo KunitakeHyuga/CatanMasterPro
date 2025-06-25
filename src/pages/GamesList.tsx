@@ -24,12 +24,12 @@ export const GamesList: React.FC = () => {
     );
     
     // Search in tags
-    const tagMatch = game.tags.some(tag => 
+    const tagMatch = game.gameDetails.tags.some(tag =>
       tag.toLowerCase().includes(searchLower)
     );
-    
+
     // Search in notes
-    const notesMatch = game.notes.toLowerCase().includes(searchLower);
+    const notesMatch = game.gameDetails.notes.toLowerCase().includes(searchLower);
     
     // Search in date
     const dateMatch = game.date.includes(searchTerm);

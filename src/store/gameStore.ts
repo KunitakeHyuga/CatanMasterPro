@@ -14,7 +14,6 @@ import {
   DevelopmentCardType,
   VictoryPointCardType,
   DiceRoll,
-  GameState as GameStateType,
   ResourceCount
 } from '../models/types';
 
@@ -158,8 +157,7 @@ export const useGameStore = create<GameState>()(
           })),
           winner: '',
           boardSetup,
-          notes: '',
-          tags: [],
+          gameDetails: { notes: '', tags: [] },
           currentTurn: 1,
           currentPlayer: players[0]?.id || '',
           developmentCardDeck: createInitialDeck(),
@@ -552,6 +550,7 @@ export const useGameStore = create<GameState>()(
       addGame: (game) => {
         const newGame = {
           ...game,
+          gameDetails: game.gameDetails || { notes: '', tags: [] },
           id: uuidv4(),
         };
         
@@ -599,7 +598,15 @@ export const useGameStore = create<GameState>()(
       updateGame: (id, updates) => {
         set((state) => ({
           games: state.games.map((game) =>
-            game.id === id ? { ...game, ...updates } : game
+            game.id === id
+              ? {
+                  ...game,
+                  ...updates,
+                  gameDetails: updates.gameDetails
+                    ? updates.gameDetails
+                    : game.gameDetails
+                }
+              : game
           ),
         }));
       },
@@ -658,9 +665,33 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'catan-master-store',
+      version: 1,
+      merge: (persistedState, currentState) => {
+        const state = {
+          ...currentState,
+          ...(persistedState as GameState),
+        } as GameState;
+
+        // 旧形式のデータを新形式へ変換
+        state.games = state.games.map(convertGameDetails);
+        state.currentGame = state.currentGame
+          ? convertGameDetails(state.currentGame)
+          : null;
+
+        return state;
+      }
     }
   )
 );
+
+// 旧形式のゲームデータを新形式に整形
+function convertGameDetails(game: any): GameSession {
+  if (!game.gameDetails) {
+    const { notes = '', tags = [], ...rest } = game;
+    return { ...rest, gameDetails: { notes, tags } } as GameSession;
+  }
+  return game as GameSession;
+}
 
 // カード名を取得するための補助関数
 function getCardName(type: DevelopmentCardType): string {

@@ -245,24 +245,24 @@ export const GameDetails: React.FC = () => {
                   </div>
                 </div>
                 
-                {game.notes && (
+                {game.gameDetails.notes && (
                   <div className="mb-6">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">
                       Game Notes
                     </h3>
-                    <p className="text-gray-900 bg-gray-50 p-3 rounded">{game.notes}</p>
+                    <p className="text-gray-900 bg-gray-50 p-3 rounded">{game.gameDetails.notes}</p>
                   </div>
                 )}
-                
-                {game.tags.length > 0 && (
+
+                {game.gameDetails.tags.length > 0 && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 mb-2">
                       Tags
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {game.tags.map(tag => (
-                        <span 
-                          key={tag} 
+                      {game.gameDetails.tags.map(tag => (
+                        <span
+                          key={tag}
                           className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800"
                         >
                           {tag}

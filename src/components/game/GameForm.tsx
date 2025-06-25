@@ -28,8 +28,8 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
   
   const [date, setDate] = useState(initialGame?.date || format(new Date(), 'yyyy-MM-dd'));
   const [duration, setDuration] = useState(initialGame?.duration || 60);
-  const [notes, setNotes] = useState(initialGame?.notes || '');
-  const [tags, setTags] = useState<string[]>(initialGame?.tags || []);
+  const [notes, setNotes] = useState(initialGame?.gameDetails?.notes || '');
+  const [tags, setTags] = useState<string[]>(initialGame?.gameDetails?.tags || []);
   const [newTag, setNewTag] = useState('');
   const [gameType, setGameType] = useState<'standard' | 'seafarers' | 'cities' | 'traders' | 'america'>('standard');
   
@@ -114,8 +114,10 @@ export const GameForm: React.FC<GameFormProps> = ({ onSave, initialGame }) => {
       winner: gamePlayers.find(p => p.rank === 1)?.playerId || '',
       boardSetup,
       developmentCardDeck,
-      notes,
-      tags
+      gameDetails: {
+        notes,
+        tags
+      }
     };
     
     if (initialGame) {

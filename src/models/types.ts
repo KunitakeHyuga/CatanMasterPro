@@ -169,6 +169,11 @@ export interface DevelopmentCardDeck {
   totalRemaining: number;
 }
 
+export interface GameDetails {
+  notes: string;
+  tags: string[];
+}
+
 export interface GameSession {
   id: string;
   date: string;
@@ -176,8 +181,7 @@ export interface GameSession {
   players: GamePlayer[];
   winner: string; // player ID
   boardSetup: BoardSetup;
-  notes: string;
-  tags: string[];
+  gameDetails: GameDetails;
   currentTurn: number;
   currentPlayer: string;
   developmentCardDeck: DevelopmentCardDeck;
